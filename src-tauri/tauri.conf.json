@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "easy-keys",
+  "version": "0.1.0",
+  "identifier": "com.easykeys.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "easy-keys · 本地 API Key 管理",
+        "width": 1080,
+        "height": 720,
+        "minWidth": 860,
+        "minHeight": 600,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Utility",
+    "shortDescription": "本地 AI API Key 管理工具",
+    "longDescription": "完全本地运行的 AI API Key 管理器：加密保险库存储、一键测速、明文/加密导出、一键写入环境变量。应用自身零联网。",
+    "copyright": "Copyright © 2026 easy-keys",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
