@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ApiKeyRecord, ProviderTemplate } from "../types";
-
-function sanitizeEnvName(name: string): string {
-  return name.replace(/[^A-Za-z0-9_]/g, "_");
-}
+import { applyProviderDefaults, computeAutoEnvName } from "../utils";
 
 export default function KeyFormModal({
   initial,
@@ -21,14 +18,7 @@ export default function KeyFormModal({
 
   // 选择 provider 时自动填充默认值
   const applyProvider = (id: string) => {
-    const tpl = providers.find((p) => p.id === id);
-    setForm((prev) => ({
-      ...prev,
-      provider: id,
-      authType: tpl?.authType ?? prev.authType,
-      baseUrl: tpl?.defaultBaseUrl ?? prev.baseUrl,
-      envName: prev.envName || (tpl?.defaultEnvName ?? prev.envName),
-    }));
+    setForm((prev) => applyProviderDefaults(prev, providers, id));
   };
 
   // 首次打开编辑已有记录时，把 provider 匹配到模板
@@ -45,11 +35,10 @@ export default function KeyFormModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const autoEnvName = useMemo(() => {
-    if (form.envName.trim()) return sanitizeEnvName(form.envName.trim());
-    const base = sanitizeEnvName(form.provider.toUpperCase());
-    return `${base}_API_KEY`;
-  }, [form.envName, form.provider]);
+  const autoEnvName = useMemo(
+    () => computeAutoEnvName(form.envName, form.provider),
+    [form.envName, form.provider]
+  );
 
   const set = <K extends keyof ApiKeyRecord>(key: K, value: ApiKeyRecord[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));

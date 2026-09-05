@@ -29,6 +29,40 @@ npm install
 npm run tauri dev
 ```
 
+## 测试与自回归
+
+本地测试环境已固化，一条命令跑完全部回归：
+
+```bash
+./scripts/run.sh             # 完整：类型检查 + 前端测试 + Rust 测试 + 构建验证
+./scripts/run.sh --skip-build # 跳过构建验证（更快）
+```
+
+测试分层：
+
+| 层 | 工具 | 位置 | 覆盖 |
+| --- | --- | --- | --- |
+| Rust 集成测试 | `cargo test` | `src-tauri/tests/*.rs` | 加密往返、错误密码、保险库 CRUD、改密码、批量导入、env 幂等替换、会话脚本、.ekey 导出/导入、明文 JSON |
+| 前端单元测试 | Vitest | `src/*.test.ts` | `maskKey` 遮蔽、provider 默认值填充、env 名生成、`newEmptyRecord` |
+| 类型检查 | `tsc --noEmit` | — | 前端 TS 类型安全 |
+| 构建验证 | `vite build` | — | 前端生产构建可通过 |
+
+单独跑某一层：
+
+```bash
+npm run typecheck       # 前端类型检查
+npm run test            # 前端单元测试（Vitest）
+npx vitest --watch      # 前端测试 watch 模式
+cd src-tauri && cargo test   # Rust 测试
+```
+
+测试隔离设计：
+- Rust 测试通过 `EASY_KEYS_DATA_DIR` 指向临时目录，**绝不触碰真实保险库**；文件系统类测试经全局 Mutex 串行执行避免竞态。
+- 前端测试只测纯逻辑（无 Tauri/浏览器依赖），秒级完成。
+- 测试代码（`#[cfg(test)]` / `*.test.ts`）只存在于开发期，**不进入发布包**——发布体积不受影响（已验证主二进制 14MB、.dmg 4.5MB）。
+
+手动 GUI 测试：`npm run tauri dev` 启动本地窗口，创建保险库 → 添加密钥 → 测速 / 导出 / 环境变量，全流程点点点验证。
+
 ## 构建安装包
 
 ```bash

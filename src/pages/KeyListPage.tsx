@@ -2,12 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import * as api from "../api";
 import type { ApiKeyRecord, ProviderTemplate } from "../types";
 import { effectiveEnvName, newEmptyRecord } from "../types";
+import { maskKey } from "../utils";
 import KeyFormModal from "../components/KeyFormModal";
-
-function maskKey(key: string): string {
-  if (key.length <= 8) return "•".repeat(key.length);
-  return `${key.slice(0, 4)}${"•".repeat(Math.min(key.length - 8, 16))}${key.slice(-4)}`;
-}
 
 export default function KeyListPage({
   records,

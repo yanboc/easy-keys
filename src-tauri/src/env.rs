@@ -40,7 +40,8 @@ pub fn detect_shell_rc() -> AppResult<Option<PathBuf>> {
 }
 
 /// 从 rc 文件内容中替换 easy-keys 区块（幂等），返回新内容
-fn replace_block(content: &str, new_block: &str) -> String {
+/// pub 供集成测试使用
+pub fn replace_block(content: &str, new_block: &str) -> String {
     let start_pos = content.find(BLOCK_START);
     let end_pos = content.find(BLOCK_END);
 
@@ -64,8 +65,8 @@ fn replace_block(content: &str, new_block: &str) -> String {
     new
 }
 
-/// 生成 export 语句块
-fn build_block(records: &[ApiKeyRecord], export_syntax: bool) -> String {
+/// 生成 export 语句块（pub 供集成测试使用）
+pub fn build_block(records: &[ApiKeyRecord], export_syntax: bool) -> String {
     let mut lines = String::new();
     lines.push_str(BLOCK_START);
     lines.push('\n');
@@ -231,71 +232,4 @@ pub fn session_script_path(shell: &str) -> AppResult<PathBuf> {
         _ => "env.sh",
     };
     Ok(dir.join(name))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::models::ApiKeyRecord;
-
-    fn rec(env_name: &str, key: &str) -> ApiKeyRecord {
-        ApiKeyRecord {
-            id: String::new(),
-            name: String::new(),
-            provider: "openai".into(),
-            base_url: "https://api.openai.com/v1".into(),
-            auth_type: "bearer".into(),
-            api_key: key.into(),
-            models: vec![],
-            notes: String::new(),
-            env_name: env_name.into(),
-            created_at: 0,
-            updated_at: 0,
-        }
-    }
-
-    #[test]
-    fn test_build_block_export() {
-        let records = vec![rec("OPENAI_API_KEY", "sk-abc'def")];
-        let block = build_block(&records, true);
-        assert!(block.contains("export OPENAI_API_KEY='sk-abc'\\''def'"));
-        assert!(block.contains(BLOCK_START));
-        assert!(block.contains(BLOCK_END));
-    }
-
-    #[test]
-    fn test_replace_block_idempotent() {
-        let records = vec![rec("OPENAI_API_KEY", "sk-123")];
-        let block1 = build_block(&records, true);
-
-        // 先写入空文件
-        let once = replace_block("", &block1);
-        assert_eq!(once.matches(BLOCK_START).count(), 1);
-
-        // 再写一次，不应堆积
-        let twice = replace_block(&once, &block1);
-        assert_eq!(twice.matches(BLOCK_START).count(), 1);
-        assert_eq!(twice.matches("sk-123").count(), 1);
-    }
-
-    #[test]
-    fn test_session_script_content_sh() {
-        let records = vec![rec("OPENAI_API_KEY", "sk-123")];
-        let s = session_script_content(&records, "sh");
-        assert_eq!(s, "export OPENAI_API_KEY='sk-123'\n");
-    }
-
-    #[test]
-    fn test_session_script_content_powershell() {
-        let records = vec![rec("OPENAI_API_KEY", "sk-123")];
-        let s = session_script_content(&records, "powershell");
-        assert_eq!(s, "$env:OPENAI_API_KEY = 'sk-123'\n");
-    }
-
-    #[test]
-    fn test_dotenv_escaping() {
-        let records = vec![rec("OPENAI_API_KEY", "sk-a\"b")];
-        let s = dotenv_content(&records);
-        assert_eq!(s, "OPENAI_API_KEY=sk-a\\\"b\n");
-    }
 }

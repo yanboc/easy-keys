@@ -1,10 +1,10 @@
-mod crypto;
-mod env;
-mod error;
-mod export_import;
-mod models;
-mod speedtest;
-mod vault;
+pub mod crypto;
+pub mod env;
+pub mod error;
+pub mod export_import;
+pub mod models;
+pub mod speedtest;
+pub mod vault;
 
 use crate::error::{AppError, AppResult};
 use crate::models::*;

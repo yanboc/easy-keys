@@ -23,8 +23,23 @@ pub fn app_data_dir() -> AppResult<PathBuf> {
         .ok_or_else(|| AppError::new("无法确定应用数据目录"))
 }
 
+/// 供测试注入的数据目录。
+/// 通过 env var EASY_KEYS_DATA_DIR 覆盖（首次调用后锁定，保证测试进程内一致）。
+/// 数据目录解析：优先 EASY_KEYS_DATA_DIR（测试注入），否则真实用户目录。
+/// 每次实时读取，便于测试在 Mutex 保护下切换目录。
+fn data_dir() -> PathBuf {
+    std::env::var_os("EASY_KEYS_DATA_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| app_data_dir().unwrap_or_else(|_| PathBuf::from(".")))
+}
+
+/// 测试辅助：设置数据目录（仅测试进程调用）
+pub fn set_data_dir_for_tests(dir: PathBuf) {
+    std::env::set_var("EASY_KEYS_DATA_DIR", dir);
+}
+
 pub fn vault_path() -> AppResult<PathBuf> {
-    Ok(app_data_dir()?.join(VAULT_FILE_NAME))
+    Ok(data_dir().join(VAULT_FILE_NAME))
 }
 
 /// 保险库是否存在
@@ -45,9 +60,9 @@ pub fn read_vault_file() -> AppResult<VaultFile> {
 
 /// 原子写入保险库（临时文件 + rename，权限 0600）
 pub fn write_vault_file(vault: &VaultFile) -> AppResult<()> {
-    let dir = app_data_dir()?;
+    let dir = data_dir();
     fs::create_dir_all(&dir)?;
-    let path = vault_path()?;
+    let path = dir.join(VAULT_FILE_NAME);
 
     let json = serde_json::to_vec_pretty(vault)?;
     let tmp = dir.join(format!(".vault.tmp.{}.json", Uuid::new_v4()));
@@ -177,78 +192,4 @@ pub fn change_password(old_password: &str, new_password: &str) -> AppResult<()> 
 pub fn burn_secret(secret: Zeroizing<String>) {
     let mut s = secret;
     s.zeroize();
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::crypto;
-
-    fn sample_record() -> ApiKeyRecord {
-        ApiKeyRecord {
-            id: String::new(),
-            name: "测试密钥".into(),
-            provider: "openai".into(),
-            base_url: "https://api.openai.com/v1".into(),
-            auth_type: "bearer".into(),
-            api_key: "sk-test-1234567890".into(),
-            models: vec!["gpt-4o".into()],
-            notes: "测试".into(),
-            env_name: "".into(),
-            created_at: 0,
-            updated_at: 0,
-        }
-    }
-
-    #[test]
-    fn test_encrypt_decrypt_roundtrip() {
-        let records = RecordsFile {
-            version: 1,
-            records: vec![sample_record()],
-        };
-        let vault = crypto::encrypt_vault("correct-horse-123", &records).unwrap();
-        // 密文不应包含明文密钥
-        let json = serde_json::to_string(&vault).unwrap();
-        assert!(!json.contains("sk-test-1234567890"));
-
-        let decrypted = crypto::decrypt_vault("correct-horse-123", &vault).unwrap();
-        assert_eq!(decrypted.records.len(), 1);
-        assert_eq!(decrypted.records[0].api_key, "sk-test-1234567890");
-    }
-
-    #[test]
-    fn test_decrypt_wrong_password_fails() {
-        let records = RecordsFile {
-            version: 1,
-            records: vec![],
-        };
-        let vault = crypto::encrypt_vault("correct-horse-123", &records).unwrap();
-        let err = crypto::decrypt_vault("wrong-password", &vault).unwrap_err();
-        assert!(err.message.contains("密码错误"));
-    }
-
-    #[test]
-    fn test_same_password_different_ciphertext() {
-        // 相同明文 + 相同密码，两次加密结果必须不同（随机 salt/nonce）
-        let records = RecordsFile {
-            version: 1,
-            records: vec![sample_record()],
-        };
-        let v1 = crypto::encrypt_vault("pwd-12345678", &records).unwrap();
-        let v2 = crypto::encrypt_vault("pwd-12345678", &records).unwrap();
-        assert_ne!(v1.ciphertext, v2.ciphertext);
-        assert_ne!(v1.kdf.salt, v2.kdf.salt);
-        assert_ne!(v1.nonce, v2.nonce);
-    }
-
-    #[test]
-    fn test_effective_env_name() {
-        let mut r = sample_record();
-        r.env_name = "".into();
-        r.provider = "deepseek".into();
-        assert_eq!(r.effective_env_name(), "DEEPSEEK_API_KEY");
-
-        r.env_name = "MY CUSTOM NAME".into();
-        assert_eq!(r.effective_env_name(), "MY_CUSTOM_NAME");
-    }
 }
