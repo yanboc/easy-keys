@@ -1,6 +1,6 @@
 [package]
 name = "easy-keys"
-version = "0.1.0"
+version = "0.2.0"
 description = "Fully-local AI API Key manager: encrypted vault, speed test, env var injection"
 authors = ["easy-keys"]
 edition = "2021"
@@ -33,3 +33,9 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 base64 = "0.22"
 thiserror = "2"
 futures-util = "0.3"
+
+# E2E 专用：内嵌 WebDriver server，仅 e2e feature 下编译，release 构建严禁包含
+tauri-plugin-wdio-webdriver = { version = "1", optional = true }
+
+[features]
+e2e = ["dep:tauri-plugin-wdio-webdriver"]

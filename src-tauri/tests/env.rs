@@ -101,3 +101,50 @@ fn test_dotenv_multiple() {
     assert!(out.contains("OPENAI_API_KEY=sk-1\n"));
     assert!(out.contains("DEEPSEEK_API_KEY=sk-2\n"));
 }
+
+// ============ 边界与异常路径 ============
+
+#[test]
+fn test_replace_block_into_empty_file() {
+    // 目标 rc 文件不存在时按空内容处理，写入后即一个完整区块
+    let block = env::build_block(&[rec("OPENAI_API_KEY", "sk-123")], true);
+    let out = env::replace_block("", &block);
+    assert!(out.starts_with(env::BLOCK_START));
+    assert!(out.contains("export OPENAI_API_KEY='sk-123'"));
+    assert!(out.trim_end().ends_with(env::BLOCK_END), "out: {out}");
+}
+
+#[test]
+fn test_replace_block_preserves_existing_content() {
+    // 文件中已有其它内容：只替换本应用管理的块，连续写两次不堆积
+    let existing = "# 我的自定义配置\nexport PATH=\"$HOME/bin:$PATH\"\nalias ll='ls -la'\n";
+    let block = env::build_block(&[rec("OPENAI_API_KEY", "sk-123")], true);
+
+    let once = env::replace_block(existing, &block);
+    assert!(once.contains("# 我的自定义配置"));
+    assert!(once.contains("export PATH=\"$HOME/bin:$PATH\""));
+    assert!(once.contains("alias ll='ls -la'"));
+    assert_eq!(once.matches(env::BLOCK_START).count(), 1);
+
+    let twice = env::replace_block(&once, &block);
+    assert_eq!(twice.matches(env::BLOCK_START).count(), 1);
+    assert_eq!(twice.matches(env::BLOCK_END).count(), 1);
+    assert_eq!(twice.matches("sk-123").count(), 1);
+    assert!(twice.contains("alias ll='ls -la'"));
+}
+
+#[test]
+fn test_replace_block_crlf_file() {
+    // CRLF 行尾的 rc 文件：原有内容（含 CRLF）保留，区块幂等
+    let existing = "export PATH=\"$HOME/bin:$PATH\"\r\nalias ll='ls -la'\r\n";
+    let block = env::build_block(&[rec("OPENAI_API_KEY", "sk-123")], true);
+
+    let once = env::replace_block(existing, &block);
+    assert!(once.contains("export PATH=\"$HOME/bin:$PATH\"\r\n"));
+    assert_eq!(once.matches(env::BLOCK_START).count(), 1);
+
+    let twice = env::replace_block(&once, &block);
+    assert_eq!(twice.matches(env::BLOCK_START).count(), 1);
+    assert_eq!(twice.matches("sk-123").count(), 1);
+    assert!(twice.contains("export PATH=\"$HOME/bin:$PATH\"\r\n"));
+}

@@ -21,7 +21,8 @@ export default defineConfig(async () => ({
 
   // Vitest 配置（仅测试使用，不影响生产构建）
   test: {
-    environment: "node",
+    environment: "jsdom",
+    setupFiles: ["src/test/setup.ts"],
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
   },
 }));

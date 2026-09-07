@@ -178,9 +178,13 @@ async fn open_text_file_cmd(app: tauri::AppHandle) -> AppResult<Option<String>> 
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_clipboard_manager::init());
+    // 仅 e2e feature（真机 E2E 测试）下内嵌 WebDriver server；release 构建不包含
+    #[cfg(feature = "e2e")]
+    let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
+    builder
         .invoke_handler(tauri::generate_handler![
             vault_exists_cmd,
             vault_create_cmd,

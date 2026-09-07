@@ -5,6 +5,7 @@
 #   ./run.sh                # 完整回归（类型+前端+Rust+构建）
 #   ./run.sh --skip-build   # 跳过构建验证（更快）
 #   ./run.sh --fast         # 等价 --skip-build
+#   ./run.sh --e2e          # 常规回归后追加真机 E2E（会打开真实窗口）
 # 前置: node/npm, Rust toolchain (cargo), 无需网络（Rust 依赖已缓存）
 # ============================================================
 set -euo pipefail
@@ -13,10 +14,12 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 SKIP_BUILD=0
+RUN_E2E=0
 for arg in "$@"; do
   case "$arg" in
     --skip-build|--fast) SKIP_BUILD=1 ;;
-    *) echo "未知参数: $arg (支持 --skip-build/--fast)" >&2; exit 1 ;;
+    --e2e) RUN_E2E=1 ;;
+    *) echo "未知参数: $arg (支持 --skip-build/--fast/--e2e)" >&2; exit 1 ;;
   esac
 done
 
@@ -73,6 +76,14 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
   run_step "前端构建验证 (vite build)" npm run build
 else
   INFO "步骤 $((STEP+1)): 已跳过构建验证 (--skip-build)"
+  STEP=$((STEP+1))
+fi
+
+# ---------- 真机 E2E（可选） ----------
+if [ "$RUN_E2E" -eq 1 ]; then
+  run_step "真机 E2E (WebdriverIO, 会打开真实窗口)" npm run test:e2e
+else
+  INFO "步骤 $((STEP+1)): 已跳过真机 E2E（加 --e2e 可启用）"
   STEP=$((STEP+1))
 fi
 

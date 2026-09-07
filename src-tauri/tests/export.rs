@@ -100,3 +100,57 @@ fn test_plain_json_unsupported_version() {
     let err = export_import::plain_json_import(&tampered).unwrap_err();
     assert!(err.message.contains("版本"), "错误信息: {}", err.message);
 }
+
+// ============ 边界与异常路径 ============
+
+#[test]
+fn test_encrypted_import_truncated_file() {
+    // .ekey 内容被截断 → JSON 解析层失败
+    let records = vec![sample("A", "sk-1")];
+    let out = export_import::encrypted_export(&records, "export-pass-123").unwrap();
+    let truncated = &out[..out.len() / 2];
+    let err = export_import::encrypted_import(truncated, "export-pass-123").unwrap_err();
+    assert!(err.message.contains("JSON"), "错误信息: {}", err.message);
+}
+
+#[test]
+fn test_encrypted_import_tampered_ciphertext() {
+    // .ekey 密文被改一个 base64 字符（仍合法）→ GCM 校验必须失败
+    let records = vec![sample("A", "sk-1")];
+    let out = export_import::encrypted_export(&records, "export-pass-123").unwrap();
+
+    let mut v: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let ct = v["ciphertext"].as_str().unwrap();
+    let mut chars: Vec<char> = ct.chars().collect();
+    chars[0] = if chars[0] == 'A' { 'B' } else { 'A' };
+    v["ciphertext"] = serde_json::json!(chars.into_iter().collect::<String>());
+    let tampered = serde_json::to_string(&v).unwrap();
+
+    let err = export_import::encrypted_import(&tampered, "export-pass-123").unwrap_err();
+    assert!(
+        err.message.contains("口令错误") || err.message.contains("损坏"),
+        "错误信息: {}",
+        err.message
+    );
+}
+
+#[test]
+fn test_encrypted_roundtrip_empty_records() {
+    // 空密钥列表导出/导入应正常往返
+    let records: Vec<ApiKeyRecord> = vec![];
+    let out = export_import::encrypted_export(&records, "export-pass-123").unwrap();
+    assert!(out.contains("EASYKEYS-EKEY"));
+    let back = export_import::encrypted_import(&out, "export-pass-123").unwrap();
+    assert!(back.is_empty());
+}
+
+#[test]
+fn test_plain_json_wrong_schema() {
+    // 合法 JSON 但结构不符：缺 records 字段
+    let err = export_import::plain_json_import(r#"{"version":1}"#).unwrap_err();
+    assert!(err.message.contains("JSON"), "错误信息: {}", err.message);
+
+    // records 不是数组
+    let err = export_import::plain_json_import(r#"{"version":1,"records":{}}"#).unwrap_err();
+    assert!(err.message.contains("JSON"), "错误信息: {}", err.message);
+}

@@ -240,3 +240,73 @@ fn test_import_records_appends() {
         assert_eq!(records.records.len(), 3);
     });
 }
+
+// ============ 边界与异常路径 ============
+
+#[test]
+fn test_decrypt_tampered_ciphertext_fails() {
+    // 密文被篡改（改一个 base64 字符，仍合法可解码）→ GCM 校验必须失败
+    let records = RecordsFile {
+        version: 1,
+        records: vec![sample_record("a", "sk-1")],
+    };
+    let mut vault = crypto::encrypt_vault("pwd-12345678", &records).unwrap();
+    let mut chars: Vec<char> = vault.ciphertext.chars().collect();
+    chars[0] = if chars[0] == 'A' { 'B' } else { 'A' };
+    vault.ciphertext = chars.into_iter().collect();
+
+    let err = crypto::decrypt_vault("pwd-12345678", &vault).unwrap_err();
+    assert!(
+        err.message.contains("密码错误") || err.message.contains("损坏"),
+        "错误信息: {}",
+        err.message
+    );
+}
+
+#[test]
+fn test_unlock_corrupt_vault_json() {
+    with_vault("corrupt-json", |pwd| {
+        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
+        // 直接把 vault.json 写成非法 JSON
+        let path = easy_keys_lib::vault::vault_path().unwrap();
+        fs::write(&path, "{ this is not valid json !!!").unwrap();
+
+        let err = easy_keys_lib::vault::unlock_vault(pwd).unwrap_err();
+        assert!(err.message.contains("JSON"), "错误信息: {}", err.message);
+    });
+}
+
+#[test]
+fn test_create_vault_empty_password_rejected() {
+    with_vault("empty-pwd", |_pwd| {
+        let err = easy_keys_lib::vault::create_vault("", "").unwrap_err();
+        assert!(err.message.contains("8 位"), "错误信息: {}", err.message);
+        // 失败后不应留下保险库文件
+        assert!(!easy_keys_lib::vault::vault_exists().unwrap());
+    });
+}
+
+#[test]
+fn test_unlock_wrong_password_fails() {
+    with_vault("unlock-wrong-pwd", |pwd| {
+        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
+        easy_keys_lib::vault::add_record(pwd, sample_record("A", "sk-A")).unwrap();
+
+        let err = easy_keys_lib::vault::unlock_vault("wrong-password").unwrap_err();
+        assert!(err.message.contains("密码错误"), "错误信息: {}", err.message);
+    });
+}
+
+#[test]
+fn test_large_api_key_roundtrip() {
+    with_vault("large-key", |pwd| {
+        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
+        let big_key = format!("sk-{}", "x".repeat(10 * 1024));
+
+        let rec = easy_keys_lib::vault::add_record(pwd, sample_record("大 key", &big_key)).unwrap();
+        let records = easy_keys_lib::vault::unlock_vault(pwd).unwrap();
+        assert_eq!(records.records.len(), 1);
+        assert_eq!(records.records[0].id, rec.id);
+        assert_eq!(records.records[0].api_key, big_key);
+    });
+}

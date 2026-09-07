@@ -4,3 +4,8 @@ src-tauri/target
 src-tauri/gen/schemas
 .DS_Store
 *.local
+
+# 本机 AI 工具配置与规格管理（不入库）
+.agents/
+.kimi-code/
+openspec/

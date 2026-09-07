@@ -22,7 +22,7 @@
 
 ## 开发
 
-前置要求：[Rust](https://rustup.rs)（stable）、[Node.js](https://nodejs.org) 18+。
+前置要求：[Rust](https://rustup.rs)（stable）、[Node.js](https://nodejs.org) 24+（组件测试依赖 jsdom 30，最低 22.22.2）。
 
 ```bash
 npm install
@@ -36,6 +36,7 @@ npm run tauri dev
 ```bash
 ./scripts/run.sh             # 完整：类型检查 + 前端测试 + Rust 测试 + 构建验证
 ./scripts/run.sh --skip-build # 跳过构建验证（更快）
+./scripts/run.sh --e2e        # 常规回归后追加真机 E2E（会打开真实窗口）
 ```
 
 测试分层：
@@ -46,6 +47,7 @@ npm run tauri dev
 | 前端单元测试 | Vitest | `src/*.test.ts` | `maskKey` 遮蔽、provider 默认值填充、env 名生成、`newEmptyRecord` |
 | 类型检查 | `tsc --noEmit` | — | 前端 TS 类型安全 |
 | 构建验证 | `vite build` | — | 前端生产构建可通过 |
+| 真机 E2E | WebdriverIO + 内嵌 WebDriver | `e2e/*.e2e.ts` | 创建保险库 → 新增密钥 → 列表遮蔽 → 显示切换 |
 
 单独跑某一层：
 
@@ -54,7 +56,15 @@ npm run typecheck       # 前端类型检查
 npm run test            # 前端单元测试（Vitest）
 npx vitest --watch      # 前端测试 watch 模式
 cd src-tauri && cargo test   # Rust 测试
+npm run test:e2e        # 真机 E2E（构建 debug+e2e 二进制后驱动真实窗口；脚本内已处理 cargo PATH）
 ```
+
+真机 E2E 说明：
+- 方案：Rust 插件 `tauri-plugin-wdio-webdriver` 在应用内嵌入 WebDriver HTTP server（macOS 上 tauri-driver 无 WKWebView 支持，故用 embedded 方案），npm 侧用 `@wdio/tauri-service`（`driverProvider: 'embedded'`）+ WebdriverIO + Mocha。
+- **安全隔离**：该插件只在 cargo feature `e2e` 下编译（`src-tauri/Cargo.toml` 的 optional 依赖 + `src/lib.rs` 条件注册）；`npm run tauri build` 的 release 构建**不含** WebDriver server。
+- E2E 二进制必须同时带 `tauri/custom-protocol` feature（`test:e2e:build` 已内置）：裸 `cargo build --features e2e` 在 Tauri 2 里是 dev 模式，窗口会尝试加载 vite dev server（localhost:1420）而白屏；加 `custom-protocol` 才会内嵌 `dist/` 前端资源。
+- **数据隔离**：E2E 启动的应用经 `EASY_KEYS_DATA_DIR` 指向 `wdio.conf.ts` onPrepare 创建的临时目录，跑完自动删除，绝不触碰真实保险库。
+- `tauri.conf.json` 开启了 `withGlobalTauri`（E2E service 需要通过 `window.__TAURI__` 探测窗口）。
 
 测试隔离设计：
 - Rust 测试通过 `EASY_KEYS_DATA_DIR` 指向临时目录，**绝不触碰真实保险库**；文件系统类测试经全局 Mutex 串行执行避免竞态。
