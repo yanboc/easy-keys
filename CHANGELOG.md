@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-07
+
+### Changed
+
+- UI 重设计：极简 macOS 原生风格（浅灰分层背景、白卡片细边框、原生分段控件、`#007AFF` 单一强调色）
+- 界面 emoji 全部替换为本地内联 SVG 图标（新增 `src/components/icons.tsx`，零第三方依赖）；状态符号改用图标 + 语义色
+- 新应用图标：纯色蓝 squircle + 极简钥匙图形，macOS `.icns` / Windows `.ico` 全尺寸更新
+
+### Added
+
+- E2E 视觉截图用例（`e2e/screenshot.e2e.ts`），用于 UI 回归自查
+
 ## [0.2.0] - 2026-09-07
 
 ### Added
@@ -32,6 +44,7 @@
 - 应用零联网：无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击测速
 - Tauri capabilities 最小权限：仅开放文件对话框与剪贴板读写
 
-[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/yanboc/easy-keys/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/yanboc/easy-keys/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/yanboc/easy-keys/releases/tag/v0.1.0
