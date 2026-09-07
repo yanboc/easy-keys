@@ -13,7 +13,9 @@ let e2eDataDir: string | null = null;
 
 export const config = {
   runner: 'local',
-  specs: ['./e2e/**/*.e2e.ts'],
+  // 显式列出执行顺序：截图 spec 必须在 vault 流程之后跑，
+  // 否则它先创建保险库会破坏 vault.e2e.ts 对初始状态的假设
+  specs: ['./e2e/vault.e2e.ts', './e2e/screenshot.e2e.ts'],
   maxInstances: 1,
   logLevel: 'warn',
   framework: 'mocha',

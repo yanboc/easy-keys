@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
+import type { ComponentType } from "react";
 import * as api from "./api";
 import type { ApiKeyRecord } from "./types";
+import {
+  BoltIcon,
+  BoxIcon,
+  GearIcon,
+  KeyIcon,
+  LeafIcon,
+  type IconProps,
+} from "./components/icons";
 import KeyListPage from "./pages/KeyListPage";
 import SpeedTestPage from "./pages/SpeedTestPage";
 import ExportPage from "./pages/ExportPage";
@@ -11,12 +20,12 @@ type Page = "keys" | "speedtest" | "export" | "env" | "settings";
 
 type VaultState = "checking" | "need-create" | "locked" | "unlocked";
 
-const NAV_ITEMS: { id: Page; label: string; icon: string }[] = [
-  { id: "keys", label: "密钥管理", icon: "🔑" },
-  { id: "speedtest", label: "连通性测速", icon: "⚡" },
-  { id: "export", label: "导出 / 导入", icon: "📦" },
-  { id: "env", label: "环境变量", icon: "🌱" },
-  { id: "settings", label: "设置", icon: "⚙️" },
+const NAV_ITEMS: { id: Page; label: string; icon: ComponentType<IconProps> }[] = [
+  { id: "keys", label: "密钥管理", icon: KeyIcon },
+  { id: "speedtest", label: "连通性测速", icon: BoltIcon },
+  { id: "export", label: "导出 / 导入", icon: BoxIcon },
+  { id: "env", label: "环境变量", icon: LeafIcon },
+  { id: "settings", label: "设置", icon: GearIcon },
 ];
 
 function LockScreen({
@@ -56,7 +65,7 @@ function LockScreen({
 
   return (
     <div className="lock-screen">
-      <div className="lock-logo">EK</div>
+      <div className="lock-logo"><KeyIcon size={34} /></div>
       <div>
         <div className="lock-title" style={{ textAlign: "center" }}>
           {mode === "create" ? "创建加密保险库" : "解锁保险库"}
@@ -166,19 +175,24 @@ export default function App() {
     <div className="layout">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <span className="logo">EK</span>
+          <span className="logo"><KeyIcon size={17} /></span>
           <span>easy-keys</span>
         </div>
-        {NAV_ITEMS.map((item) => (
-          <div
-            key={item.id}
-            className={`nav-item ${page === item.id ? "active" : ""}`}
-            onClick={() => setPage(item.id)}
-          >
-            <span className="nav-icon">{item.icon}</span>
-            <span>{item.label}</span>
-          </div>
-        ))}
+        {NAV_ITEMS.map((item) => {
+          const NavIcon = item.icon;
+          return (
+            <div
+              key={item.id}
+              className={`nav-item ${page === item.id ? "active" : ""}`}
+              onClick={() => setPage(item.id)}
+            >
+              <span className="nav-icon">
+                <NavIcon size={16} />
+              </span>
+              <span>{item.label}</span>
+            </div>
+          );
+        })}
         <div className="sidebar-footer">
           完全本地运行 · 零联网<br />
           数据加密存储于本机

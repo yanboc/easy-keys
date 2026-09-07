@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import * as api from "../api";
 import type { ApiKeyRecord } from "../types";
 import { effectiveEnvName } from "../types";
+import { FileIcon, LockIcon } from "../components/icons";
 
 type Tab = "export" | "import";
 
@@ -61,7 +62,7 @@ export default function ExportPage({
     }
     if (exportFormat === "plain") {
       const ok = window.confirm(
-        "⚠️ 明文导出将把全部 API Key 以未加密的 JSON 写入文件。\n\n任何能读取该文件的人都能看到你的密钥。确定继续吗？"
+        "明文导出将把全部 API Key 以未加密的 JSON 写入文件。\n\n任何能读取该文件的人都能看到你的密钥。确定继续吗？"
       );
       if (!ok) return;
     }
@@ -172,13 +173,13 @@ export default function ExportPage({
                 className={exportFormat === "encrypted" ? "active" : ""}
                 onClick={() => setExportFormat("encrypted")}
               >
-                🔒 加密 .ekey（推荐）
+                <LockIcon size={14} /> 加密 .ekey（推荐）
               </button>
               <button
                 className={exportFormat === "plain" ? "active" : ""}
                 onClick={() => setExportFormat("plain")}
               >
-                📄 明文 JSON
+                <FileIcon size={14} /> 明文 JSON
               </button>
             </div>
             <div className="field-hint">
@@ -213,7 +214,7 @@ export default function ExportPage({
 
           <div
             style={{
-              background: "var(--bg-input)",
+              background: "var(--bg)",
               border: "1px solid var(--border)",
               borderRadius: "var(--radius-sm)",
               padding: "10px 12px",
@@ -246,13 +247,13 @@ export default function ExportPage({
                 className={importFormat === "encrypted" ? "active" : ""}
                 onClick={() => setImportFormat("encrypted")}
               >
-                🔒 加密 .ekey
+                <LockIcon size={14} /> 加密 .ekey
               </button>
               <button
                 className={importFormat === "plain" ? "active" : ""}
                 onClick={() => setImportFormat("plain")}
               >
-                📄 明文 JSON
+                <FileIcon size={14} /> 明文 JSON
               </button>
             </div>
           </div>

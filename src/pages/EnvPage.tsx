@@ -2,6 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import * as api from "../api";
 import type { ApiKeyRecord, EnvWriteResult } from "../types";
 import { effectiveEnvName } from "../types";
+import {
+  BoltIcon,
+  CheckCircleIcon,
+  FileIcon,
+  SaveIcon,
+  WarningIcon,
+} from "../components/icons";
 
 type Mode = "persistent" | "session" | "dotenv";
 
@@ -108,19 +115,19 @@ export default function EnvPage({
               className={mode === "persistent" ? "active" : ""}
               onClick={() => setMode("persistent")}
             >
-              💾 持久化（重启生效）
+              <SaveIcon size={14} /> 持久化（重启生效）
             </button>
             <button
               className={mode === "session" ? "active" : ""}
               onClick={() => setMode("session")}
             >
-              ⚡ 仅当前会话
+              <BoltIcon size={14} /> 仅当前会话
             </button>
             <button
               className={mode === "dotenv" ? "active" : ""}
               onClick={() => setMode("dotenv")}
             >
-              📄 .env 文件
+              <FileIcon size={14} /> .env 文件
             </button>
           </div>
           <div className="field-hint">
@@ -226,13 +233,11 @@ export default function EnvPage({
               {result.written.map((name) => (
                 <div
                   key={name}
-                  style={{
-                    fontSize: 12,
-                    color: "var(--success)",
-                    padding: "3px 0",
-                  }}
+                  className="env-result-row"
+                  style={{ color: "var(--success)" }}
                 >
-                  ✔ {name}
+                  <CheckCircleIcon size={14} />
+                  <span>{name}</span>
                 </div>
               ))}
             </div>
@@ -242,13 +247,11 @@ export default function EnvPage({
               {result.skipped.map((s) => (
                 <div
                   key={s}
-                  style={{
-                    fontSize: 12,
-                    color: "var(--warning)",
-                    padding: "3px 0",
-                  }}
+                  className="env-result-row"
+                  style={{ color: "var(--warning)" }}
                 >
-                  ⚠ {s}
+                  <WarningIcon size={14} />
+                  <span>{s}</span>
                 </div>
               ))}
             </div>
@@ -270,7 +273,7 @@ export default function EnvPage({
               style={{
                 fontSize: 12,
                 color: "var(--text-dim)",
-                background: "var(--bg-input)",
+                background: "var(--bg)",
                 border: "1px solid var(--border)",
                 borderRadius: "var(--radius-sm)",
                 padding: "10px 12px",

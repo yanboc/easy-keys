@@ -1,5 +1,6 @@
 import { useState } from "react";
 import * as api from "../api";
+import { LockIcon } from "../components/icons";
 
 export default function SettingsPage({
   password,
@@ -96,7 +97,7 @@ export default function SettingsPage({
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="btn btn-danger" onClick={onLock}>
-            🔒 锁定应用
+            <LockIcon size={14} /> 锁定应用
           </button>
         </div>
         <div

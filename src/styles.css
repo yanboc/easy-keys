@@ -1,25 +1,28 @@
 :root {
-  --bg: #0f1115;
-  --bg-panel: #161a21;
-  --bg-elevated: #1d222b;
-  --bg-input: #10131a;
-  --border: #2a303c;
-  --border-hover: #3b4456;
-  --text: #e6e9ef;
-  --text-dim: #9aa3b2;
-  --text-faint: #6b7482;
-  --accent: #4f8cff;
-  --accent-hover: #6ba1ff;
-  --accent-dim: rgba(79, 140, 255, 0.12);
-  --success: #34c77b;
-  --success-dim: rgba(52, 199, 123, 0.12);
-  --danger: #ff5d5d;
-  --danger-dim: rgba(255, 93, 93, 0.12);
-  --warning: #f0b429;
+  --bg: #f5f5f7;
+  --bg-panel: #ffffff;
+  --bg-elevated: #f0f0f3;
+  --bg-input: #ffffff;
+  --bg-sidebar: #ececf0;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --text: #1d1d1f;
+  --text-dim: #6e6e73;
+  --text-faint: #8e8e93;
+  --accent: #007aff;
+  --accent-hover: #0069d9;
+  --accent-dim: rgba(0, 122, 255, 0.1);
+  --success: #248a3d;
+  --success-dim: rgba(52, 199, 89, 0.12);
+  --danger: #d70015;
+  --danger-dim: rgba(255, 59, 48, 0.1);
+  --warning: #b25000;
   --radius: 10px;
-  --radius-sm: 7px;
-  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-    "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --radius-sm: 8px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.18);
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+    "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   --mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 }
 
@@ -60,12 +63,14 @@ select {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: rgba(0, 0, 0, 0.18);
   border-radius: 5px;
-  border: 2px solid var(--bg);
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-hover);
+  background: rgba(0, 0, 0, 0.28);
+  background-clip: padding-box;
 }
 
 /* ---------- 通用组件 ---------- */
@@ -77,8 +82,8 @@ select {
   gap: 6px;
   padding: 7px 14px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-panel);
   color: var(--text);
   font-size: 13px;
   cursor: pointer;
@@ -86,8 +91,7 @@ select {
   white-space: nowrap;
 }
 .btn:hover:not(:disabled) {
-  border-color: var(--border-hover);
-  background: #242b36;
+  background: var(--bg-elevated);
 }
 .btn:disabled {
   opacity: 0.45;
@@ -104,7 +108,7 @@ select {
 }
 .btn-danger {
   background: transparent;
-  border-color: var(--danger);
+  border-color: rgba(215, 0, 21, 0.4);
   color: var(--danger);
 }
 .btn-danger:hover:not(:disabled) {
@@ -134,21 +138,22 @@ select {
   width: 100%;
   padding: 8px 12px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   background: var(--bg-input);
   color: var(--text);
   font-size: 13px;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .input:focus,
 .select:focus,
 .textarea:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
 }
 .select {
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239aa3b2' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236e6e73' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 32px;
@@ -180,6 +185,7 @@ select {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
+  box-shadow: var(--shadow-card);
 }
 
 /* ---------- 弹窗 ---------- */
@@ -187,7 +193,7 @@ select {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -203,7 +209,7 @@ select {
   max-width: calc(100vw - 48px);
   max-height: calc(100vh - 48px);
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-modal);
 }
 .modal-title {
   font-size: 16px;
@@ -234,18 +240,18 @@ select {
   padding: 10px 18px;
   border-radius: 8px;
   font-size: 13px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-hover);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   animation: toast-in 0.2s ease;
   max-width: 70vw;
 }
 .toast-success {
-  border-color: var(--success);
+  border-color: rgba(36, 138, 61, 0.4);
   color: var(--success);
 }
 .toast-error {
-  border-color: var(--danger);
+  border-color: rgba(215, 0, 21, 0.4);
   color: var(--danger);
 }
 @keyframes toast-in {
@@ -273,14 +279,14 @@ select {
   width: 64px;
   height: 64px;
   border-radius: 16px;
-  background: linear-gradient(135deg, var(--accent), #7c5cff);
+  background: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
   font-weight: 700;
   color: #fff;
-  box-shadow: 0 10px 30px rgba(79, 140, 255, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 122, 255, 0.25);
 }
 .lock-title {
   font-size: 20px;
@@ -312,12 +318,12 @@ select {
 .sidebar {
   width: 210px;
   flex-shrink: 0;
-  background: var(--bg-panel);
+  background: var(--bg-sidebar);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   padding: 14px 10px;
-  gap: 4px;
+  gap: 2px;
 }
 .sidebar-brand {
   display: flex;
@@ -331,7 +337,7 @@ select {
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent), #7c5cff);
+  background: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -343,7 +349,7 @@ select {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   color: var(--text-dim);
@@ -352,18 +358,19 @@ select {
   border: 1px solid transparent;
 }
 .nav-item:hover {
-  background: var(--bg-elevated);
+  background: rgba(0, 0, 0, 0.04);
   color: var(--text);
 }
 .nav-item.active {
-  background: var(--accent-dim);
-  color: var(--accent);
-  border-color: rgba(79, 140, 255, 0.25);
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--text);
+  font-weight: 500;
 }
 .nav-item .nav-icon {
-  font-size: 15px;
   width: 18px;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .sidebar-footer {
   margin-top: auto;
@@ -410,8 +417,11 @@ select {
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
 .table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(0, 0, 0, 0.02);
 }
 .key-cell {
   display: flex;
@@ -435,7 +445,7 @@ select {
 }
 .badge-provider {
   background: var(--accent-dim);
-  border-color: rgba(79, 140, 255, 0.3);
+  border-color: rgba(0, 122, 255, 0.25);
   color: var(--accent);
 }
 .icon-btn {
@@ -450,16 +460,15 @@ select {
   color: var(--text-dim);
   cursor: pointer;
   transition: all 0.12s;
-  font-size: 13px;
 }
 .icon-btn:hover {
-  background: var(--bg-elevated);
+  background: rgba(0, 0, 0, 0.05);
   color: var(--text);
   border-color: var(--border);
 }
 .icon-btn.danger:hover {
   color: var(--danger);
-  border-color: var(--danger);
+  border-color: rgba(215, 0, 21, 0.35);
   background: var(--danger-dim);
 }
 
@@ -469,9 +478,10 @@ select {
   color: var(--text-faint);
 }
 .empty-state .big-icon {
-  font-size: 40px;
+  display: flex;
+  justify-content: center;
   margin-bottom: 12px;
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .toolbar {
@@ -498,15 +508,31 @@ select {
 .speed-running {
   color: var(--warning);
 }
+.status-with-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
 
 .spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid var(--border);
+  border: 2px solid rgba(0, 0, 0, 0.12);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   display: inline-block;
+}
+.btn-primary .spinner {
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
 }
 @keyframes spin {
   to {
@@ -517,7 +543,7 @@ select {
 /* ---------- 环境变量 ---------- */
 
 .env-preview {
-  background: var(--bg-input);
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 12px;
@@ -532,6 +558,13 @@ select {
 .env-preview .env-name {
   color: var(--accent);
 }
+.env-result-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 3px 0;
+}
 
 .tab-row {
   display: flex;
@@ -541,6 +574,9 @@ select {
   padding-bottom: 10px;
 }
 .tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 6px 14px;
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
@@ -552,12 +588,12 @@ select {
 }
 .tab:hover {
   color: var(--text);
-  background: var(--bg-elevated);
+  background: rgba(0, 0, 0, 0.04);
 }
 .tab.active {
-  color: var(--accent);
-  background: var(--accent-dim);
-  border-color: rgba(79, 140, 255, 0.25);
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.06);
+  font-weight: 500;
 }
 
 .check-row {
@@ -571,12 +607,13 @@ select {
   cursor: pointer;
   transition: all 0.12s;
   font-size: 13px;
+  background: var(--bg-panel);
 }
 .check-row:hover {
-  border-color: var(--border-hover);
+  border-color: var(--border-strong);
 }
 .check-row.checked {
-  border-color: rgba(79, 140, 255, 0.5);
+  border-color: rgba(0, 122, 255, 0.45);
   background: var(--accent-dim);
 }
 .check-row input {
@@ -588,19 +625,27 @@ select {
 
 .seg {
   display: inline-flex;
+  gap: 2px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.045);
+  padding: 2px;
 }
 .seg button {
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px;
   border: none;
+  border-radius: 7px;
   background: transparent;
   color: var(--text-dim);
   font-size: 13px;
   cursor: pointer;
+  transition: all 0.12s;
 }
 .seg button.active {
-  background: var(--accent-dim);
-  color: var(--accent);
+  background: var(--bg-panel);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }

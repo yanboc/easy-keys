@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ApiKeyRecord, ProviderTemplate } from "../types";
 import { applyProviderDefaults, computeAutoEnvName } from "../utils";
+import { EyeIcon, EyeOffIcon } from "./icons";
 
 export default function KeyFormModal({
   initial,
@@ -126,7 +127,7 @@ export default function KeyFormModal({
               style={{ border: "1px solid var(--border)" }}
               onClick={() => setShowKey((v) => !v)}
             >
-              {showKey ? "🙈" : "👁"}
+              {showKey ? <EyeOffIcon size={15} /> : <EyeIcon size={15} />}
             </button>
           </div>
         </div>

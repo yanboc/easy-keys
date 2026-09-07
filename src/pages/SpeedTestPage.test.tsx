@@ -54,9 +54,9 @@ describe("SpeedTestPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /开始测速/ }));
 
     expect(api.speedtest).toHaveBeenCalledWith(records, 10000);
-    // 成功 / 失败状态与延迟展示
-    expect(await screen.findByText("● 连通")).toBeInTheDocument();
-    expect(screen.getByText("● 失败")).toBeInTheDocument();
+    // 成功 / 失败状态（图标圆点 + 语义色文字）与延迟展示
+    expect(await screen.findByText("连通")).toBeInTheDocument();
+    expect(screen.getByText("失败")).toBeInTheDocument();
     expect(screen.getByText("123 ms")).toBeInTheDocument();
     expect(screen.getByText("连接超时")).toBeInTheDocument();
     expect(screen.getByText(/成功/)).toBeInTheDocument();

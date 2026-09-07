@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as api from "../api";
 import type { ApiKeyRecord, SpeedTestResult } from "../types";
+import { BoltIcon } from "../components/icons";
 
 export default function SpeedTestPage({
   records,
@@ -68,7 +69,9 @@ export default function SpeedTestPage({
                 <span className="spinner" /> 测速中…
               </>
             ) : (
-              "⚡ 开始测速"
+              <>
+                <BoltIcon size={14} /> 开始测速
+              </>
             )}
           </button>
         </div>
@@ -77,7 +80,9 @@ export default function SpeedTestPage({
       {results.length === 0 ? (
         <div className="card">
           <div className="empty-state">
-            <div className="big-icon">⚡</div>
+            <div className="big-icon">
+              <BoltIcon size={40} />
+            </div>
             <div>尚未测速</div>
             <div style={{ color: "var(--text-faint)", marginTop: 6 }}>
               点击「开始测速」对全部 {records.length} 条密钥进行并发检测
@@ -113,10 +118,15 @@ export default function SpeedTestPage({
                   <td>
                     {running && !r.statusCode && !r.error ? (
                       <span className="speed-running">检测中…</span>
-                    ) : r.ok ? (
-                      <span className="speed-ok">● 连通</span>
                     ) : (
-                      <span className="speed-fail">● 失败</span>
+                      <span
+                        className={`status-with-dot ${
+                          r.ok ? "speed-ok" : "speed-fail"
+                        }`}
+                      >
+                        <span className="status-dot" />
+                        {r.ok ? "连通" : "失败"}
+                      </span>
                     )}
                   </td>
                   <td style={{ fontWeight: 500 }}>{r.name}</td>

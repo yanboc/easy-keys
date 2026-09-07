@@ -52,11 +52,17 @@ describe("EnvPage", () => {
     );
 
     expect(api.envWritePersistent).toHaveBeenCalledWith(records);
-    expect(await screen.findByText("✔ OPENAI_API_KEY")).toBeInTheDocument();
-    expect(screen.getByText("✔ DEEPSEEK_API_KEY")).toBeInTheDocument();
+    // 先等待结果卡片渲染完成
     expect(
-      screen.getByText(/文件：\/Users\/test\/\.zshrc/)
+      await screen.findByText(/文件：\/Users\/test\/\.zshrc/)
     ).toBeInTheDocument();
+    // 结果区以图标 + 语义色呈现成功，密钥名会同时出现在勾选列表与结果中
+    expect(screen.getAllByText("OPENAI_API_KEY").length).toBeGreaterThanOrEqual(
+      2
+    );
+    expect(
+      screen.getAllByText("DEEPSEEK_API_KEY").length
+    ).toBeGreaterThanOrEqual(2);
   });
 
   it("切换到仅当前会话模式后生成会话脚本", async () => {

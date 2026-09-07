@@ -4,6 +4,15 @@ import type { ApiKeyRecord, ProviderTemplate } from "../types";
 import { effectiveEnvName, newEmptyRecord } from "../types";
 import { maskKey } from "../utils";
 import KeyFormModal from "../components/KeyFormModal";
+import {
+  CopyIcon,
+  EditIcon,
+  EyeIcon,
+  EyeOffIcon,
+  KeyIcon,
+  PlusIcon,
+  TrashIcon,
+} from "../components/icons";
 
 export default function KeyListPage({
   records,
@@ -106,7 +115,7 @@ export default function KeyListPage({
         <div />
         <div className="toolbar-right">
           <button className="btn btn-primary" onClick={() => setCreating(true)}>
-            ＋ 新增密钥
+            <PlusIcon size={14} /> 新增密钥
           </button>
         </div>
       </div>
@@ -114,7 +123,9 @@ export default function KeyListPage({
       {records.length === 0 ? (
         <div className="card">
           <div className="empty-state">
-            <div className="big-icon">🔑</div>
+            <div className="big-icon">
+              <KeyIcon size={40} />
+            </div>
             <div>还没有任何密钥</div>
             <div style={{ color: "var(--text-faint)", marginTop: 6 }}>
               点击「新增密钥」开始管理你的第一个 API Key
@@ -173,14 +184,18 @@ export default function KeyListPage({
                           }))
                         }
                       >
-                        {revealed[r.id] ? "🙈" : "👁"}
+                        {revealed[r.id] ? (
+                          <EyeOffIcon size={15} />
+                        ) : (
+                          <EyeIcon size={15} />
+                        )}
                       </button>
                       <button
                         className="icon-btn"
                         title="复制（30 秒后自动清除）"
                         onClick={() => handleCopy(r)}
                       >
-                        📋
+                        <CopyIcon size={15} />
                       </button>
                     </div>
                   </td>
@@ -201,14 +216,14 @@ export default function KeyListPage({
                       title="编辑"
                       onClick={() => setEditing(r)}
                     >
-                      ✏️
+                      <EditIcon size={15} />
                     </button>
                     <button
                       className="icon-btn danger"
                       title="删除"
                       onClick={() => handleDelete(r)}
                     >
-                      🗑
+                      <TrashIcon size={15} />
                     </button>
                   </td>
                 </tr>
