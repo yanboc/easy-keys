@@ -146,7 +146,16 @@ jobs:
 
       - name: Build (macOS)
         if: matrix.platform == 'macos-latest'
-        run: npm run tauri build -- ${{ matrix.args }}
+        run: |
+          # 只打 .app：tauri 的 dmg bundler 在无头 CI 上写不了 .DS_Store（布局丢失），
+          # dmg 由 scripts/make-dmg.sh 负责（内嵌已验证布局 + ad-hoc 深签名）
+          npm run tauri build -- --bundles app ${{ matrix.args }}
+          TRIPLE=$(echo "${{ matrix.args }}" | grep -oE '[a-z0-9_]+-apple-darwin')
+          ARCH=$([[ "$TRIPLE" == aarch64* ]] && echo aarch64 || echo x64)
+          VER=$(python3 -c "import json;print(json.load(open('src-tauri/tauri.conf.json'))['version'])")
+          ./scripts/make-dmg.sh \
+            "src-tauri/target/${TRIPLE}/release/bundle/macos/easy-keys.app" \
+            "src-tauri/target/${TRIPLE}/release/bundle/dmg/easy-keys_${VER}_${ARCH}.dmg"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

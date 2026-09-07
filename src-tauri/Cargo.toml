@@ -1,6 +1,6 @@
 [package]
 name = "easy-keys"
-version = "0.4.0"
+version = "0.4.1"
 description = "Fully-local AI API Key manager: encrypted vault, speed test, env var injection"
 authors = ["easy-keys"]
 edition = "2021"

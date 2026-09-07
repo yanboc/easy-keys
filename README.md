@@ -15,6 +15,7 @@
 ## 目录
 
 - [功能](#功能)
+- [安装](#安装)
 - [技术栈](#技术栈)
 - [开发](#开发)
 - [测试与自回归](#测试与自回归)
@@ -37,6 +38,21 @@
 | 环境变量 | 一键写入 shell 配置（`~/.zshrc` 等，幂等替换不堆积）或 Windows 用户环境变量；支持仅当前会话脚本与 `.env` 文件 |
 | 安全细节 | 密钥默认遮蔽显示；复制到剪贴板 30 秒后自动清除；保险库原子写入防损坏 |
 | 安装体验 | macOS dmg 紧凑布局（app 居左、Applications 居右）；启动时自动将下载目录中的旧版安装包移入废纸篓 |
+
+---
+
+## 安装
+
+从 [GitHub Releases](https://github.com/yanboc/easy-keys/releases/latest) 下载对应平台的安装包。
+
+1. **macOS**：打开 `.dmg`，将 easy-keys 拖入「应用程序」文件夹。应用为 ad-hoc 签名（未做 Apple 公证），首次打开若提示无法验证，在「系统设置 → 隐私与安全性」点击**仍要打开**，或执行：
+
+   ```bash
+   xattr -cr /Applications/easy-keys.app
+   ```
+
+2. **Windows**：运行 `.exe`（NSIS）或 `.msi` 安装程序。
+3. **Linux**：使用 `.deb` 或 `.AppImage`。
 
 ---
 

@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-07
+
+### Fixed
+
+- macOS dmg 安装窗口布局在 CI 构建中丢失：tauri 的 dmg bundler 依赖 Finder AppleScript，无头 CI 上静默失败导致产物缺少 `.DS_Store`；改为 `scripts/make-dmg.sh` 手动打包，内嵌本地验证过的布局（窗口 540x360、app 居左、Applications 居右）
+- macOS 打开报「已损坏，无法打开」：产物此前仅为 linker 级 adhoc 签名且资源未封装；CI 现在对 .app 执行干净的 ad-hoc 深签名（`codesign --force --deep --sign -`），Gatekeeper 恢复为正常的「无法验证开发者」流程（隐私与安全性 → 仍要打开，或 `xattr -cr`）
+
+### Added
+
+- README 新增「安装」章节（各平台安装方式与 macOS Gatekeeper 说明）
+
 ## [0.4.0] - 2026-09-07
 
 ### Added
@@ -58,7 +69,8 @@
 - 应用零联网：无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击测速
 - Tauri capabilities 最小权限：仅开放文件对话框与剪贴板读写
 
-[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/yanboc/easy-keys/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/yanboc/easy-keys/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/yanboc/easy-keys/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/yanboc/easy-keys/compare/v0.1.0...v0.2.0

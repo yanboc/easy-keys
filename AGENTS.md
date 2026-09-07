@@ -55,3 +55,4 @@ npm run tauri dev              # 本地开发窗口
 - `src-tauri/src/`：Rust 后端（crypto / vault / env / export_import / speedtest / installer_cleanup / biometric / models / error / lib）
 - `openspec/`：规格与变更提案
 - `scripts/run.sh`：一键自回归入口
+- `scripts/make-dmg.sh`：CI macOS dmg 打包（内嵌已验证的 DS_Store 布局 + ad-hoc 深签名；tauri 自带 dmg bundler 在无头 CI 上布局会丢失）
