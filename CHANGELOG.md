@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-07
+
 ### Added
 
 - 生物识别解锁：主密码可托管至系统安全存储（macOS Keychain 访问控制项 / Windows Credential Locker），解锁由系统强制 Touch ID / Windows Hello（指纹/面容/PIN）验证，失败可回退主密码；Linux 不显示入口
@@ -56,7 +58,8 @@
 - 应用零联网：无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击测速
 - Tauri capabilities 最小权限：仅开放文件对话框与剪贴板读写
 
-[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/yanboc/easy-keys/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/yanboc/easy-keys/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/yanboc/easy-keys/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/yanboc/easy-keys/releases/tag/v0.1.0
