@@ -191,6 +191,19 @@ export function WarningIcon(props: IconProps) {
   );
 }
 
+/** 指纹 / 生物识别 */
+export function FingerprintIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M6 6.6A9.5 9.5 0 0 1 21 12.5" />
+      <path d="M3.2 12.5a8.5 8.5 0 0 1 1.2-4.2" />
+      <path d="M7.4 20a17.5 17.5 0 0 0 1.1-7.5 3.5 3.5 0 0 1 7 0c0 2.6-.1 5.1-.5 7.5" />
+      <path d="M12 12.7c0 2.9-.3 5.7-1 8.3" />
+      <path d="M17.6 20.5c.8-2.4 1.3-5 1.4-8a7 7 0 0 0-.6-2.8" />
+    </Svg>
+  );
+}
+
 /** 加号 / 新增 */
 export function PlusIcon(props: IconProps) {
   return (

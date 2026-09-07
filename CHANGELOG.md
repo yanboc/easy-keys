@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+### Added
+
+- 生物识别解锁：主密码可托管至系统安全存储（macOS Keychain 访问控制项 / Windows Credential Locker），解锁由系统强制 Touch ID / Windows Hello（指纹/面容/PIN）验证，失败可回退主密码；Linux 不显示入口
+- 密钥表单智能命名：按 Base URL 自动推导名称（如 deepseek/openai），Tab 一键填入，手动输入不被覆盖
+- 表单内「测速并获取模型」：一键请求 `/models`，显示延迟并勾选可用模型保存到记录（默认全不选）
+- 旧版本安装包自动清理：启动时将下载目录中低版本的 `easy-keys_*.dmg` 移入废纸篓（不触碰用户数据）
+
+### Changed
+
+- 应用图标改为白底 squircle + 黑色极简钥匙
+- macOS dmg 安装窗口缩小并收紧留白：app 图标居左、Applications 快捷方式居右
+
 ## [0.3.0] - 2026-09-07
 
 ### Changed

@@ -1,6 +1,6 @@
 use crate::error::{AppError, AppResult};
-use crate::models::{ApiKeyRecord, SpeedTestResult};
-use reqwest::Client;
+use crate::models::{ApiKeyRecord, FetchModelsResult, SpeedTestResult};
+use reqwest::{Client, RequestBuilder};
 use std::time::Instant;
 
 /// 默认超时（毫秒）
@@ -17,6 +17,18 @@ fn build_client(timeout_ms: u64) -> AppResult<Client> {
         .build()
         .map_err(|e| AppError::new(format!("HTTP 客户端初始化失败: {e}")))?;
     Ok(client)
+}
+
+/// 按认证方式给请求附加凭据（测速与获取模型共用）
+fn apply_auth(req: RequestBuilder, auth_type: &str, api_key: &str) -> RequestBuilder {
+    match auth_type {
+        "x-api-key" => req
+            .header("x-api-key", api_key)
+            .header("anthropic-version", "2023-06-01"),
+        "query" => req.query(&[("key", api_key)]),
+        "none" => req, // 无认证（本地 Ollama 等）
+        _ => req.bearer_auth(api_key),
+    }
 }
 
 /// 对单条记录测速
@@ -50,21 +62,7 @@ pub async fn test_one(record: &ApiKeyRecord, timeout_ms: u64) -> SpeedTestResult
     let url = format!("{base}{test_path}");
 
     // 构造请求
-    let mut req = client.get(&url);
-    match record.auth_type.as_str() {
-        "x-api-key" => {
-            req = req
-                .header("x-api-key", &record.api_key)
-                .header("anthropic-version", "2023-06-01");
-        }
-        "query" => {
-            req = req.query(&[("key", &record.api_key)]);
-        }
-        "none" => { /* 无认证（本地 Ollama 等） */ }
-        _ => {
-            req = req.bearer_auth(&record.api_key);
-        }
-    }
+    let req = apply_auth(client.get(&url), &record.auth_type, &record.api_key);
 
     let started = Instant::now();
     match req.send().await {
@@ -114,4 +112,89 @@ pub async fn test_many(records: &[ApiKeyRecord], timeout_ms: u64) -> Vec<SpeedTe
     // 失败排后，成功按延迟升序
     results.sort_by_key(|r| (r.ok, r.latency_ms.unwrap_or(u64::MAX)));
     results
+}
+
+/// 「测速并获取模型」：GET {base_url}/models，解析 OpenAI 兼容响应。
+/// 与测速同一安全约束：禁重定向、全局超时、仅用户主动点击触发；
+/// 单次请求同时充当连通性测速，返回耗时毫秒数。
+pub async fn fetch_models(
+    base_url: &str,
+    auth_type: &str,
+    api_key: &str,
+    timeout_ms: u64,
+) -> AppResult<FetchModelsResult> {
+    let base = base_url.trim().trim_end_matches('/');
+    if base.is_empty() {
+        return Err(AppError::new("Base URL 为空"));
+    }
+    let client = build_client(timeout_ms)?;
+    let url = format!("{base}/models");
+    let req = apply_auth(client.get(&url), auth_type, api_key);
+
+    let started = Instant::now();
+    let resp = req
+        .send()
+        .await
+        .map_err(|e| AppError::new(normalize_network_error(&e)))?;
+    let status = resp.status();
+    if !status.is_success() {
+        return Err(AppError::new(format!("HTTP {}", status.as_u16())));
+    }
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| AppError::new(format!("读取响应失败: {e}")))?;
+    let latency_ms = started.elapsed().as_millis() as u64;
+    let models = parse_models_response(&body)?;
+    Ok(FetchModelsResult { models, latency_ms })
+}
+
+/// 解析 OpenAI 兼容的 /models 响应：{"data":[{"id":"..."},...]}
+/// 非字符串 / 缺 id 的条目跳过；缺少 data 数组或非 JSON 视为错误。
+pub fn parse_models_response(body: &str) -> AppResult<Vec<String>> {
+    let value: serde_json::Value =
+        serde_json::from_str(body).map_err(|e| AppError::new(format!("响应不是合法 JSON: {e}")))?;
+    let data = value
+        .get("data")
+        .and_then(|d| d.as_array())
+        .ok_or_else(|| AppError::new("响应缺少 data 数组"))?;
+    let models = data
+        .iter()
+        .filter_map(|m| m.get("id").and_then(|id| id.as_str()).map(String::from))
+        .collect();
+    Ok(models)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_openai_compatible_response() {
+        let body = r#"{"object":"list","data":[{"id":"gpt-4o"},{"id":"gpt-4o-mini"}]}"#;
+        let models = parse_models_response(body).unwrap();
+        assert_eq!(models, vec!["gpt-4o", "gpt-4o-mini"]);
+    }
+
+    #[test]
+    fn parse_empty_data_returns_empty() {
+        let models = parse_models_response(r#"{"data":[]}"#).unwrap();
+        assert!(models.is_empty());
+    }
+
+    #[test]
+    fn parse_non_json_is_error() {
+        assert!(parse_models_response("not json").is_err());
+    }
+
+    #[test]
+    fn parse_missing_data_is_error() {
+        assert!(parse_models_response(r#"{"object":"list"}"#).is_err());
+    }
+
+    #[test]
+    fn parse_skips_entries_without_string_id() {
+        let body = r#"{"data":[{"id":"a"},{"name":"b"},123]}"#;
+        assert_eq!(parse_models_response(body).unwrap(), vec!["a"]);
+    }
 }

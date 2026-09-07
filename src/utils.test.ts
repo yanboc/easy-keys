@@ -4,6 +4,7 @@ import {
   applyProviderDefaults,
   computeAutoEnvName,
   maskKey,
+  suggestNameFromBaseUrl,
 } from "./utils";
 import { newEmptyRecord, type ProviderTemplate } from "./types";
 
@@ -89,5 +90,55 @@ describe("computeAutoEnvName", () => {
   it("无自定义名时按 provider 生成", () => {
     expect(computeAutoEnvName("", "openai")).toBe("OPENAI_API_KEY");
     expect(computeAutoEnvName("  ", "anthropic")).toBe("ANTHROPIC_API_KEY");
+  });
+});
+
+describe("suggestNameFromBaseUrl", () => {
+  it("已知服务商域名映射为固定名称", () => {
+    expect(suggestNameFromBaseUrl("https://api.openai.com/v1")).toBe("openai");
+    expect(suggestNameFromBaseUrl("https://api.deepseek.com")).toBe("deepseek");
+    expect(suggestNameFromBaseUrl("https://api.anthropic.com")).toBe(
+      "anthropic"
+    );
+    expect(suggestNameFromBaseUrl("https://open.bigmodel.cn/api/paas/v4")).toBe(
+      "bigmodel"
+    );
+    expect(suggestNameFromBaseUrl("https://api.moonshot.cn/v1")).toBe(
+      "moonshot"
+    );
+    expect(
+      suggestNameFromBaseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
+    ).toBe("dashscope");
+    expect(suggestNameFromBaseUrl("https://api.mistral.ai/v1")).toBe("mistral");
+    expect(suggestNameFromBaseUrl("https://api.x.ai/v1")).toBe("xai");
+    expect(suggestNameFromBaseUrl("https://api.groq.com/openai/v1")).toBe(
+      "groq"
+    );
+  });
+
+  it("域名大小写不敏感", () => {
+    expect(suggestNameFromBaseUrl("HTTPS://API.OPENAI.COM/v1")).toBe("openai");
+  });
+
+  it("未知域名回退为二级域名小写", () => {
+    expect(suggestNameFromBaseUrl("https://api.foo-bar.com/v1")).toBe(
+      "foo-bar"
+    );
+    expect(suggestNameFromBaseUrl("https://example.com")).toBe("example");
+    expect(suggestNameFromBaseUrl("https://AI.Foo-Bar.COM:8443/v1")).toBe(
+      "foo-bar"
+    );
+  });
+
+  it("非法 URL 与空值不建议", () => {
+    expect(suggestNameFromBaseUrl("")).toBeNull();
+    expect(suggestNameFromBaseUrl("   ")).toBeNull();
+    expect(suggestNameFromBaseUrl("not a url")).toBeNull();
+    expect(suggestNameFromBaseUrl("/relative/path")).toBeNull();
+  });
+
+  it("无二级域名（localhost / IP）不建议", () => {
+    expect(suggestNameFromBaseUrl("http://localhost:11434")).toBeNull();
+    expect(suggestNameFromBaseUrl("http://127.0.0.1:8080/v1")).toBeNull();
   });
 });

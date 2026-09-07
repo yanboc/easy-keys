@@ -22,7 +22,7 @@ npm run tauri dev              # 本地开发窗口
 
 本项目本机使用 OpenSpec 管理规格，现有行为的权威描述在 `openspec/specs/`（**仅本机维护，不入库**，已被 .gitignore 排除）：
 
-- `vault-crypto` / `key-management` / `speedtest` / `export-import` / `env-vars`
+- `vault-crypto` / `key-management` / `speedtest` / `export-import` / `env-vars` / `biometric-unlock` / `installer-cleanup` / `ui-style` / `docs-conventions`
 
 工作流约定：
 
@@ -30,6 +30,12 @@ npm run tauri dev              # 本地开发窗口
 2. 纯 bug 修复、重构、测试加固可直接改，无需 proposal。
 3. 改了行为就必须同步对应 spec；提交前跑 `openspec validate --strict`。
 4. 版本发布前更新 `CHANGELOG.md`（Keep a Changelog 格式）。
+
+## 提交纪律
+
+- **提交前检查文档同步**：README（功能表/命令/安全模型/测试跑法）必须与代码实际行为一致；版本发布提交同步 README 受影响章节与 CHANGELOG。
+- **保持仓库整洁**：本机工具配置、临时脚本、构建产物、截图等及时加入 `.gitignore`；发现误入库的文件在最近提交中移除并补规则。
+- README 写作风格遵循 `docs-conventions` 规格（居中头部 + badges、目录、大节分隔线、表格清单、示例驱动、不用 emoji 装饰）。
 
 ## 测试约定
 
@@ -46,6 +52,6 @@ npm run tauri dev              # 本地开发窗口
 ## 代码结构
 
 - `src/`：React 前端（`api.ts` 是唯一的 Tauri invoke 封装层，前端不直接 import `@tauri-apps/api`）
-- `src-tauri/src/`：Rust 后端（crypto / vault / env / export_import / speedtest / models / error / lib）
+- `src-tauri/src/`：Rust 后端（crypto / vault / env / export_import / speedtest / installer_cleanup / biometric / models / error / lib）
 - `openspec/`：规格与变更提案
 - `scripts/run.sh`：一键自回归入口

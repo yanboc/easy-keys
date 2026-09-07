@@ -1,24 +1,52 @@
+<div align="center">
+
 # easy-keys
+
+[![Build](https://github.com/yanboc/easy-keys/actions/workflows/build.yml/badge.svg)](https://github.com/yanboc/easy-keys/actions/workflows/build.yml)
+![Platform: macOS | Windows | Linux](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
+![Stack: Tauri 2 + React 18](https://img.shields.io/badge/Stack-Tauri%202%20%2B%20React%2018-blue)
+
+</div>
 
 完全本地的 AI API Key 管理工具（macOS / Windows / Linux）。
 
 加密保险库存储你的所有模型 API Key，支持一键测速、明文/加密导出、一键写入环境变量。应用自身**零联网**——没有遥测、没有更新检查、没有任何第三方连接，唯一可能联网的场景是你主动点击「测速」。
 
+## 目录
+
+- [功能](#功能)
+- [技术栈](#技术栈)
+- [开发](#开发)
+- [测试与自回归](#测试与自回归)
+- [构建安装包](#构建安装包)
+- [数据存储位置](#数据存储位置)
+- [安全模型](#安全模型)
+- [注意事项](#注意事项)
+
+---
+
 ## 功能
 
 | 功能 | 说明 |
 | --- | --- |
-| 🔐 加密保险库 | 主密码经 Argon2id 派生密钥，AES-256-GCM 加密存储在本机应用数据目录 |
-| ⚡ 一键测速 | 并发向各密钥配置的端点发起轻量请求，测量连通性与延迟；已禁用自动重定向防止密钥泄露 |
-| 📦 导出 / 导入 | 明文 JSON、加密 `.ekey` 可迁移文件（独立口令，可在另一台机器导入） |
-| 🌱 环境变量 | 一键写入 shell 配置（`~/.zshrc` 等，幂等替换不堆积）或 Windows 用户环境变量；支持仅当前会话脚本与 `.env` 文件 |
-| 🔒 安全细节 | 密钥默认遮蔽显示；复制到剪贴板 30 秒后自动清除；保险库原子写入防损坏 |
+| 加密保险库 | 主密码经 Argon2id 派生密钥，AES-256-GCM 加密存储在本机应用数据目录 |
+| 生物识别解锁 | 可选：主密码托管至系统安全存储，Touch ID / Windows Hello（指纹/面容/PIN）一键解锁，可回退主密码 |
+| 一键测速 | 并发向各密钥配置的端点发起轻量请求，测量连通性与延迟；已禁用自动重定向防止密钥泄露 |
+| 智能表单 | 按 Base URL 自动建议密钥名称（Tab 填入）；表单内一键测速并拉取可用模型勾选保存 |
+| 导出 / 导入 | 明文 JSON、加密 `.ekey` 可迁移文件（独立口令，可在另一台机器导入） |
+| 环境变量 | 一键写入 shell 配置（`~/.zshrc` 等，幂等替换不堆积）或 Windows 用户环境变量；支持仅当前会话脚本与 `.env` 文件 |
+| 安全细节 | 密钥默认遮蔽显示；复制到剪贴板 30 秒后自动清除；保险库原子写入防损坏 |
+| 安装体验 | macOS dmg 紧凑布局（app 居左、Applications 居右）；启动时自动将下载目录中的旧版安装包移入废纸篓 |
+
+---
 
 ## 技术栈
 
 - [Tauri 2](https://tauri.app)（Rust 后端，体积约 10-20MB，对比 Electron 150-250MB）
 - React 18 + Vite + TypeScript（前端全部本地打包，无 CDN 依赖）
 - Rust 加密：`argon2` + `aes-gcm`（AES-256-GCM）
+
+---
 
 ## 开发
 
@@ -28,6 +56,8 @@
 npm install
 npm run tauri dev
 ```
+
+---
 
 ## 测试与自回归
 
@@ -44,10 +74,10 @@ npm run tauri dev
 | 层 | 工具 | 位置 | 覆盖 |
 | --- | --- | --- | --- |
 | Rust 集成测试 | `cargo test` | `src-tauri/tests/*.rs` | 加密往返、错误密码、保险库 CRUD、改密码、批量导入、env 幂等替换、会话脚本、.ekey 导出/导入、明文 JSON |
-| 前端单元测试 | Vitest | `src/*.test.ts` | `maskKey` 遮蔽、provider 默认值填充、env 名生成、`newEmptyRecord` |
+| 前端单元测试 | Vitest | `src/*.test.ts` | `maskKey` 遮蔽、provider 默认值填充、env 名生成、URL 推导名称建议、`newEmptyRecord` |
 | 类型检查 | `tsc --noEmit` | — | 前端 TS 类型安全 |
 | 构建验证 | `vite build` | — | 前端生产构建可通过 |
-| 真机 E2E | WebdriverIO + 内嵌 WebDriver | `e2e/*.e2e.ts` | 创建保险库 → 新增密钥 → 列表遮蔽 → 显示切换 |
+| 真机 E2E | WebdriverIO + 内嵌 WebDriver | `e2e/*.e2e.ts` | 创建保险库 → 新增密钥 → 列表遮蔽 → 显示切换；视觉截图自查 |
 
 单独跑某一层：
 
@@ -73,6 +103,8 @@ npm run test:e2e        # 真机 E2E（构建 debug+e2e 二进制后驱动真实
 
 手动 GUI 测试：`npm run tauri dev` 启动本地窗口，创建保险库 → 添加密钥 → 测速 / 导出 / 环境变量，全流程点点点验证。
 
+---
+
 ## 构建安装包
 
 ```bash
@@ -87,6 +119,8 @@ npm run tauri build
 
 三平台自动构建见 [`.github/workflows/build.yml`](.github/workflows/build.yml)（push tag `v*` 自动发布 GitHub Release）。
 
+---
+
 ## 数据存储位置
 
 | 平台 | 路径 |
@@ -97,15 +131,21 @@ npm run tauri build
 
 文件权限为仅当前用户可读写（0600）。加密导出 `.ekey` 文件可在任意平台导入。
 
+---
+
 ## 安全模型
 
 1. **零联网**：应用不包含任何遥测、崩溃上报、更新检查或第三方 SDK；启动后仅读写本地文件。
 2. **加密存储**：主密码永不上传，经 Argon2id（OWASP 推荐参数）派生密钥后以 AES-256-GCM 加密保险库。
-3. **测速隔离**：唯一联网路径是测速，必须用户主动点击；请求直连用户配置的端点，禁用重定向，默认 10s 超时。
+3. **测速隔离**：联网路径只有测速与表单里的「测速并获取模型」，均须用户主动点击；请求直连用户配置的端点，禁用重定向，默认 10s 超时。
 4. **最小权限**：Tauri capabilities 只开放文件对话框与剪贴板读取/写入；shell 配置写入在 Rust 侧完成。
 5. **明文导出需二次确认**：明文 JSON 导出前会弹出安全警告。
+6. **生物识别解锁（可选）**：开启后主密码托管于操作系统安全存储——macOS 为带 userPresence 访问控制的 Keychain 项、Windows 为 Credential Locker + Windows Hello 前置验证；读取由系统强制验证身份，应用自身不落盘主密码。生物识别解锁期间主密码仅驻留 Rust 内存（Zeroizing），锁定即清除；Linux 不提供该入口。
+
+---
 
 ## 注意事项
 
 - 主密码丢失后**无法恢复**数据，请务必通过「导出 → 加密 .ekey」定期备份。
 - 持久化写入环境变量会把密钥以明文写入 shell 配置文件；若更在意静态安全，推荐「仅当前会话」模式。
+- 首次启动时若 macOS 弹出「easy-keys 想访问下载文件夹」授权框：这是旧版安装包自动清理功能（仅移入废纸篓、可恢复），拒绝授权不影响任何正常使用。

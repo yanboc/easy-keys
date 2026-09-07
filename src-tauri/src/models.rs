@@ -15,7 +15,8 @@ pub struct ApiKeyRecord {
     pub auth_type: String,
     /// API Key 明文
     pub api_key: String,
-    /// 可选的模型列表
+    /// 可选的模型列表（旧保险库 JSON 可能缺该字段，默认空）
+    #[serde(default)]
     pub models: Vec<String>,
     /// 备注
     pub notes: String,
@@ -181,6 +182,15 @@ pub struct SpeedTestResult {
     pub latency_ms: Option<u64>,
     pub status_code: Option<u16>,
     pub error: Option<String>,
+}
+
+/// 「测速并获取模型」结果：模型 ID 列表 + 请求耗时
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FetchModelsResult {
+    pub models: Vec<String>,
+    /// GET {base_url}/models 的总耗时毫秒
+    pub latency_ms: u64,
 }
 
 /// 环境变量写入结果

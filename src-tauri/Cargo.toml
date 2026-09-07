@@ -33,9 +33,20 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 base64 = "0.22"
 thiserror = "2"
 futures-util = "0.3"
+trash = "5"
 
 # E2E 专用：内嵌 WebDriver server，仅 e2e feature 下编译，release 构建严禁包含
 tauri-plugin-wdio-webdriver = { version = "1", optional = true }
+
+# 生物识别解锁：macOS 走 Keychain 访问控制项（SecAccessControl + userPresence）
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "CFData", "CFDictionary", "CFError", "CFNumber", "CFString"] }
+objc2-local-authentication = { version = "0.3", default-features = false, features = ["std", "LAContext"] }
+objc2-security = { version = "0.3", default-features = false, features = ["std", "SecBase", "SecAccessControl", "SecItem"] }
+
+# 生物识别解锁：Windows 走 Credential Locker + UserConsentVerifier（Windows Hello）
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.56", features = ["Foundation", "Security_Credentials", "Security_Credentials_UI", "Win32_System_WinRT"] }
 
 [features]
 e2e = ["dep:tauri-plugin-wdio-webdriver"]

@@ -33,11 +33,22 @@ export interface SpeedTestResult {
   error: string | null;
 }
 
+export interface FetchModelsResult {
+  models: string[];
+  latencyMs: number;
+}
+
 export interface EnvWriteResult {
   written: string[];
   skipped: string[];
   targetFile: string | null;
   instructions: string | null;
+}
+
+export interface BiometricStatus {
+  available: boolean;
+  enabled: boolean;
+  label: string;
 }
 
 export function newEmptyRecord(): ApiKeyRecord {

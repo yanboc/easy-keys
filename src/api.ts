@@ -1,7 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   ApiKeyRecord,
+  BiometricStatus,
   EnvWriteResult,
+  FetchModelsResult,
   ProviderTemplate,
   SpeedTestResult,
 } from "./types";
@@ -49,6 +51,28 @@ export function getDefaultProviders(): Promise<ProviderTemplate[]> {
   return invoke<ProviderTemplate[]>("get_default_providers_cmd");
 }
 
+export function vaultLock(): Promise<void> {
+  return invoke("vault_lock_cmd");
+}
+
+// ============ 生物识别解锁 ============
+
+export function biometricStatus(): Promise<BiometricStatus> {
+  return invoke<BiometricStatus>("biometric_status_cmd");
+}
+
+export function biometricEnable(password: string): Promise<void> {
+  return invoke("biometric_enable_cmd", { password });
+}
+
+export function biometricDisable(): Promise<void> {
+  return invoke("biometric_disable_cmd");
+}
+
+export function biometricUnlock(): Promise<ApiKeyRecord[]> {
+  return invoke<ApiKeyRecord[]>("biometric_unlock_cmd");
+}
+
 // ============ 测速 ============
 
 export function speedtest(
@@ -56,6 +80,20 @@ export function speedtest(
   timeoutMs?: number
 ): Promise<SpeedTestResult[]> {
   return invoke<SpeedTestResult[]>("speedtest_cmd", { records, timeoutMs });
+}
+
+export function fetchModels(
+  baseUrl: string,
+  authType: string,
+  apiKey: string,
+  timeoutMs?: number
+): Promise<FetchModelsResult> {
+  return invoke<FetchModelsResult>("fetch_models_cmd", {
+    baseUrl,
+    authType,
+    apiKey,
+    timeoutMs,
+  });
 }
 
 // ============ 导出 / 导入 ============

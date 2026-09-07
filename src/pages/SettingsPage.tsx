@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as api from "../api";
-import { LockIcon } from "../components/icons";
+import type { BiometricStatus } from "../types";
+import { FingerprintIcon, LockIcon } from "../components/icons";
 
 export default function SettingsPage({
   password,
@@ -15,9 +16,21 @@ export default function SettingsPage({
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [busy, setBusy] = useState(false);
+  const [bio, setBio] = useState<BiometricStatus | null>(null);
+  const [bioPwd, setBioPwd] = useState("");
+  const [bioEnabling, setBioEnabling] = useState(false);
+  const [bioBusy, setBioBusy] = useState(false);
+
+  useEffect(() => {
+    api
+      .biometricStatus()
+      .then(setBio)
+      .catch(() => {});
+  }, []);
 
   const changePassword = async () => {
-    if (oldPwd !== password) {
+    // 生物识别会话下前端不持有主密码，跳过本地比对，由后端验证
+    if (password && oldPwd !== password) {
       alert("当前主密码不正确");
       return;
     }
@@ -41,6 +54,43 @@ export default function SettingsPage({
       alert(`修改失败：${e}`);
     } finally {
       setBusy(false);
+    }
+  };
+
+  // 开启：先输入主密码确认（后端会真实解锁一次验证）；关闭：直接删除托管项
+  const toggleBiometric = async () => {
+    if (!bio) return;
+    if (!bio.enabled) {
+      setBioEnabling(true);
+      return;
+    }
+    setBioBusy(true);
+    try {
+      await api.biometricDisable();
+      setBio({ ...bio, enabled: false });
+    } catch (e) {
+      alert(`关闭失败：${e}`);
+    } finally {
+      setBioBusy(false);
+    }
+  };
+
+  const confirmBiometricEnable = async () => {
+    if (!bio) return;
+    if (!bioPwd) {
+      alert("请输入主密码");
+      return;
+    }
+    setBioBusy(true);
+    try {
+      await api.biometricEnable(bioPwd);
+      setBioPwd("");
+      setBioEnabling(false);
+      setBio({ ...bio, enabled: true });
+    } catch (e) {
+      alert(`启用失败：${e}`);
+    } finally {
+      setBioBusy(false);
     }
   };
 
@@ -90,6 +140,71 @@ export default function SettingsPage({
           </button>
         </div>
       </div>
+
+      {bio?.available && (
+        <div className="card" style={{ maxWidth: 560, marginTop: 16 }}>
+          <div className="field-label" style={{ fontSize: 14, marginBottom: 10 }}>
+            生物识别解锁
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.8 }}>
+              使用 {bio.label} 快速解锁保险库；主密码由系统安全存储托管，
+              读取时由系统强制验证身份。
+            </div>
+            <button
+              className="btn"
+              onClick={toggleBiometric}
+              disabled={bioBusy}
+            >
+              <FingerprintIcon size={14} />{" "}
+              {bio.enabled ? `关闭 ${bio.label}` : `启用 ${bio.label}`}
+            </button>
+          </div>
+          {bioEnabling && !bio.enabled && (
+            <div className="field" style={{ marginTop: 12 }}>
+              <label className="field-label">输入主密码以确认启用</label>
+              <input
+                className="input"
+                type="password"
+                value={bioPwd}
+                onChange={(e) => setBioPwd(e.target.value)}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  justifyContent: "flex-end",
+                  marginTop: 10,
+                }}
+              >
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setBioEnabling(false);
+                    setBioPwd("");
+                  }}
+                >
+                  取消
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={confirmBiometricEnable}
+                  disabled={bioBusy}
+                >
+                  {bioBusy ? "启用中…" : "确认启用"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="card" style={{ maxWidth: 560, marginTop: 16 }}>
         <div className="field-label" style={{ fontSize: 14, marginBottom: 10 }}>

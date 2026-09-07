@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ComponentType } from "react";
 import * as api from "./api";
-import type { ApiKeyRecord } from "./types";
+import type { ApiKeyRecord, BiometricStatus } from "./types";
 import {
   BoltIcon,
   BoxIcon,
+  FingerprintIcon,
   GearIcon,
   KeyIcon,
   LeafIcon,
@@ -31,14 +32,55 @@ const NAV_ITEMS: { id: Page; label: string; icon: ComponentType<IconProps> }[] =
 function LockScreen({
   mode,
   onUnlock,
+  onBiometricUnlock,
 }: {
   mode: "create" | "unlock";
   onUnlock: (password: string) => void;
+  onBiometricUnlock: (records: ApiKeyRecord[]) => void;
 }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [biometric, setBiometric] = useState<BiometricStatus | null>(null);
+  const [bioBusy, setBioBusy] = useState(false);
+  const autoTriggered = useRef(false);
+
+  const biometricReady = !!(biometric?.available && biometric?.enabled);
+
+  const runBiometricUnlock = useCallback(async () => {
+    setError("");
+    setBioBusy(true);
+    try {
+      const records = await api.biometricUnlock();
+      onBiometricUnlock(records);
+    } catch {
+      // 取消 / 失败不弹窗轰炸，仅提示可回退主密码输入
+      setError("生物识别未完成，可使用主密码解锁");
+    } finally {
+      setBioBusy(false);
+    }
+  }, [onBiometricUnlock]);
+
+  useEffect(() => {
+    if (mode !== "unlock") return;
+    let cancelled = false;
+    api
+      .biometricStatus()
+      .then((s) => {
+        if (cancelled) return;
+        setBiometric(s);
+        // 已启用时进入锁屏自动触发一次系统验证（体验更顺；仅挂载后一次）
+        if (s.available && s.enabled && !autoTriggered.current) {
+          autoTriggered.current = true;
+          runBiometricUnlock();
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, runBiometricUnlock]);
 
   const submit = async () => {
     setError("");
@@ -83,6 +125,22 @@ function LockScreen({
           submit();
         }}
       >
+        {biometricReady && (
+          <button
+            className="btn btn-primary btn-lg"
+            type="button"
+            disabled={bioBusy}
+            onClick={runBiometricUnlock}
+          >
+            <FingerprintIcon size={16} />{" "}
+            {bioBusy ? "验证中…" : `使用 ${biometric!.label} 解锁`}
+          </button>
+        )}
+        {biometricReady && (
+          <div className="lock-sub" style={{ textAlign: "center" }}>
+            或使用主密码
+          </div>
+        )}
         <input
           className="input"
           type="password"
@@ -101,11 +159,17 @@ function LockScreen({
           />
         )}
         <div className="lock-error">{error}</div>
-        <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>
+        <button
+          className={`btn btn-lg ${biometricReady ? "" : "btn-primary"}`}
+          type="submit"
+          disabled={busy}
+        >
           {busy ? "处理中…" : mode === "create" ? "创建并进入" : "解锁"}
         </button>
         <div className="lock-sub" style={{ textAlign: "center" }}>
-          主密码不会存储在任何地方，忘记将无法找回数据
+          {biometricReady
+            ? "主密码由系统安全存储托管；忘记主密码将无法找回数据"
+            : "主密码不会存储在任何地方，忘记将无法找回数据"}
         </div>
       </form>
     </div>
@@ -138,6 +202,13 @@ export default function App() {
       });
   }, []);
 
+  // 生物识别解锁：主密码留在 Rust 侧会话，不进入前端内存
+  const handleBiometricUnlock = useCallback((rs: ApiKeyRecord[]) => {
+    setPassword("");
+    setRecords(rs);
+    setVaultState("unlocked");
+  }, []);
+
   const refreshRecords = useCallback(
     (next?: ApiKeyRecord[]) => {
       if (next) {
@@ -167,6 +238,7 @@ export default function App() {
       <LockScreen
         mode={vaultState === "need-create" ? "create" : "unlock"}
         onUnlock={handleUnlock}
+        onBiometricUnlock={handleBiometricUnlock}
       />
     );
   }
@@ -220,8 +292,13 @@ export default function App() {
         {page === "settings" && (
           <SettingsPage
             password={password}
-            onPasswordChanged={(newPwd) => setPassword(newPwd)}
+            onPasswordChanged={(newPwd) =>
+              // 生物识别会话下主密码不进入前端内存，保持为空
+              setPassword((prev) => (prev === "" ? prev : newPwd))
+            }
             onLock={() => {
+              // 通知 Rust 侧清除会话主密码（fire-and-forget）
+              api.vaultLock().catch(() => {});
               setPassword("");
               setRecords([]);
               setVaultState("locked");

@@ -1,14 +1,25 @@
+pub mod biometric;
 pub mod crypto;
 pub mod env;
 pub mod error;
 pub mod export_import;
+pub mod installer_cleanup;
 pub mod models;
 pub mod speedtest;
 pub mod vault;
 
+use crate::biometric::BiometricStatus;
 use crate::error::{AppError, AppResult};
 use crate::models::*;
 use zeroize::Zeroizing;
+
+/// 解析主密码：前端显式传入优先；为空时回退到生物识别解锁建立的会话密码。
+fn resolve_password(pwd: String) -> AppResult<Zeroizing<String>> {
+    if !pwd.is_empty() {
+        return Ok(Zeroizing::new(pwd));
+    }
+    vault::session_password().ok_or_else(|| AppError::new("会话已过期，请重新解锁"))
+}
 
 // ============ 保险库 ============
 
@@ -29,27 +40,38 @@ fn vault_unlock_cmd(password: String) -> AppResult<Vec<ApiKeyRecord>> {
 }
 
 #[tauri::command]
+fn vault_lock_cmd() {
+    vault::clear_session_password();
+}
+
+#[tauri::command]
 fn vault_add_cmd(password: String, record: ApiKeyRecord) -> AppResult<ApiKeyRecord> {
-    let pwd = Zeroizing::new(password);
+    let pwd = resolve_password(password)?;
     vault::add_record(&pwd, record)
 }
 
 #[tauri::command]
 fn vault_update_cmd(password: String, record: ApiKeyRecord) -> AppResult<ApiKeyRecord> {
-    let pwd = Zeroizing::new(password);
+    let pwd = resolve_password(password)?;
     vault::update_record(&pwd, record)
 }
 
 #[tauri::command]
 fn vault_delete_cmd(password: String, id: String) -> AppResult<()> {
-    let pwd = Zeroizing::new(password);
+    let pwd = resolve_password(password)?;
     vault::delete_record(&pwd, &id)
 }
 
 #[tauri::command]
 fn vault_change_password_cmd(old_password: String, new_password: String) -> AppResult<()> {
-    let old = Zeroizing::new(old_password);
-    vault::change_password(&old, &new_password)
+    let old = resolve_password(old_password)?;
+    vault::change_password(&old, &new_password)?;
+    // 主密码变更后同步系统托管项与内存会话，避免生物识别解锁失效
+    if biometric::is_enabled() {
+        biometric::enable(&new_password)?;
+    }
+    vault::update_session_password(&new_password);
+    Ok(())
 }
 
 #[tauri::command]
@@ -68,6 +90,17 @@ async fn speedtest_cmd(
     speedtest::test_many(&records, timeout).await
 }
 
+#[tauri::command]
+async fn fetch_models_cmd(
+    base_url: String,
+    auth_type: String,
+    api_key: String,
+    timeout_ms: Option<u64>,
+) -> AppResult<FetchModelsResult> {
+    let timeout = timeout_ms.unwrap_or(speedtest::DEFAULT_TIMEOUT_MS).clamp(1000, 60_000);
+    speedtest::fetch_models(&base_url, &auth_type, &api_key, timeout).await
+}
+
 // ============ 导出 / 导入 ============
 
 #[tauri::command]
@@ -77,7 +110,7 @@ fn export_plain_json_cmd(records: Vec<ApiKeyRecord>) -> AppResult<String> {
 
 #[tauri::command]
 fn export_encrypted_cmd(records: Vec<ApiKeyRecord>, password: String) -> AppResult<String> {
-    let pwd = Zeroizing::new(password);
+    let pwd = resolve_password(password)?;
     export_import::encrypted_export(&records, &pwd)
 }
 
@@ -88,14 +121,43 @@ fn import_plain_json_cmd(content: String) -> AppResult<Vec<ApiKeyRecord>> {
 
 #[tauri::command]
 fn import_encrypted_cmd(content: String, password: String) -> AppResult<Vec<ApiKeyRecord>> {
-    let pwd = Zeroizing::new(password);
+    let pwd = resolve_password(password)?;
     export_import::encrypted_import(&content, &pwd)
 }
 
 #[tauri::command]
 fn import_save_cmd(password: String, records: Vec<ApiKeyRecord>) -> AppResult<usize> {
-    let pwd = Zeroizing::new(password);
+    let pwd = resolve_password(password)?;
     vault::import_records(&pwd, records)
+}
+
+// ============ 生物识别解锁 ============
+
+#[tauri::command]
+fn biometric_status_cmd() -> BiometricStatus {
+    biometric::status()
+}
+
+/// 启用前先用该密码真实解锁一次保险库验证正确性，失败则不启用。
+#[tauri::command]
+fn biometric_enable_cmd(password: String) -> AppResult<()> {
+    let pwd = Zeroizing::new(password);
+    vault::unlock_vault(&pwd)?;
+    biometric::enable(&pwd)
+}
+
+#[tauri::command]
+fn biometric_disable_cmd() -> AppResult<()> {
+    biometric::disable()
+}
+
+/// 弹出系统生物识别 → 读托管主密码 → 解锁并建立会话；密码不出 Rust 层。
+#[tauri::command]
+fn biometric_unlock_cmd() -> AppResult<Vec<ApiKeyRecord>> {
+    let pwd = Zeroizing::new(biometric::read_password()?);
+    let records = vault::unlock_vault(&pwd)?;
+    vault::set_session_password(pwd);
+    Ok(records.records)
 }
 
 // ============ 环境变量 ============
@@ -139,6 +201,13 @@ fn env_dotenv_cmd(records: Vec<ApiKeyRecord>) -> AppResult<String> {
 }
 
 // ============ 文件对话框辅助 ============
+
+// ============ 旧安装包清理 ============
+
+#[tauri::command]
+fn cleanup_old_installers_cmd() -> AppResult<usize> {
+    installer_cleanup::cleanup_downloads()
+}
 
 #[tauri::command]
 async fn save_text_file_cmd(
@@ -189,12 +258,18 @@ pub fn run() {
             vault_exists_cmd,
             vault_create_cmd,
             vault_unlock_cmd,
+            vault_lock_cmd,
             vault_add_cmd,
             vault_update_cmd,
             vault_delete_cmd,
             vault_change_password_cmd,
+            biometric_status_cmd,
+            biometric_enable_cmd,
+            biometric_disable_cmd,
+            biometric_unlock_cmd,
             get_default_providers_cmd,
             speedtest_cmd,
+            fetch_models_cmd,
             export_plain_json_cmd,
             export_encrypted_cmd,
             import_plain_json_cmd,
@@ -206,7 +281,14 @@ pub fn run() {
             env_dotenv_cmd,
             save_text_file_cmd,
             open_text_file_cmd,
+            cleanup_old_installers_cmd,
         ])
+        .setup(|_app| {
+            // 启动后后台清理 ~/Downloads 里的旧版安装包（移入废纸篓）；
+            // fire-and-forget，失败仅记日志，不阻塞启动
+            installer_cleanup::run_silent();
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
