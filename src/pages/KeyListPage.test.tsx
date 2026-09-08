@@ -114,6 +114,33 @@ describe("KeyListPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("点击导出打开弹窗：API Key 默认打码，可复制三项", async () => {
+    renderPage();
+
+    fireEvent.click(screen.getAllByTitle("导出")[1]);
+
+    const modal = document.querySelector(".modal")!;
+    expect(modal).toBeInTheDocument();
+    // API Key 默认打码（第二条记录 sk-deepseek00001111 → sk-d••••1111）
+    expect(modal.textContent).toContain("sk-d••••1111");
+    expect(modal.textContent).not.toContain("sk-deepseek00001111");
+    expect(modal.textContent).toContain("https://api.deepseek.com/v1");
+    expect(modal.textContent).toContain("DEEPSEEK_API_KEY");
+
+    // 复制 Base URL（弹窗内两个「复制」按钮中的第一个）
+    const copyBtns = Array.from(modal.querySelectorAll('button[title="复制"]'));
+    fireEvent.click(copyBtns[0]);
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith("https://api.deepseek.com/v1");
+    });
+
+    // 复制环境变量名
+    fireEvent.click(copyBtns[1]);
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith("DEEPSEEK_API_KEY");
+    });
+  });
+
   it("无密钥时展示空状态", () => {
     render(
       <KeyListPage records={[]} password="pwd" onRecordsChange={() => {}} />

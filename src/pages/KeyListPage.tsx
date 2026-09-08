@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import * as api from "../api";
 import type { ApiKeyRecord, ProviderTemplate } from "../types";
-import { effectiveEnvName, newEmptyRecord } from "../types";
+import { newEmptyRecord } from "../types";
 import { maskKey } from "../utils";
 import { t, useLang } from "../i18n";
 import KeyFormModal from "../components/KeyFormModal";
+import KeyExportModal from "../components/KeyExportModal";
 import {
   CopyIcon,
   EditIcon,
@@ -12,6 +13,7 @@ import {
   EyeOffIcon,
   KeyIcon,
   PlusIcon,
+  ShareIcon,
   TrashIcon,
 } from "../components/icons";
 
@@ -28,6 +30,7 @@ export default function KeyListPage({
   const [providers, setProviders] = useState<ProviderTemplate[]>([]);
   const [editing, setEditing] = useState<ApiKeyRecord | null>(null);
   const [creating, setCreating] = useState(false);
+  const [exporting, setExporting] = useState<ApiKeyRecord | null>(null);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
 
@@ -197,18 +200,19 @@ export default function KeyListPage({
           <table className="table">
             <thead>
               <tr>
-                <th style={{ width: "24%" }}>{t("名称")}</th>
-                <th style={{ width: "14%" }}>{t("提供商/URL")}</th>
-                <th style={{ width: "30%" }}>{t("密钥")}</th>
-                <th style={{ width: "12%" }}>{t("环境变量")}</th>
-                <th style={{ width: "20%" }}>{t("操作")}</th>
+                <th style={{ width: "22%" }}>{t("名称")}</th>
+                <th style={{ width: "16%" }}>{t("提供商/URL")}</th>
+                <th style={{ width: "34%" }}>{t("密钥")}</th>
+                <th style={{ width: "28%" }}>{t("操作")}</th>
               </tr>
             </thead>
             <tbody>
               {records.map((r) => (
                 <tr key={r.id}>
                   <td>
-                    <div style={{ fontWeight: 500 }}>{r.name}</div>
+                    <div className="cell-name" title={r.name}>
+                      {r.name}
+                    </div>
                     {r.notes && (
                       <div
                         style={{
@@ -273,17 +277,13 @@ export default function KeyListPage({
                     </div>
                   </td>
                   <td>
-                    <code
-                      style={{
-                        fontSize: 11,
-                        color: "var(--text-dim)",
-                        fontFamily: "var(--mono)",
-                      }}
+                    <button
+                      className="icon-btn"
+                      title={t("导出")}
+                      onClick={() => setExporting(r)}
                     >
-                      {effectiveEnvName(r) || "—"}
-                    </code>
-                  </td>
-                  <td>
+                      <ShareIcon size={15} />
+                    </button>
                     <button
                       className="icon-btn"
                       title={t("编辑")}
@@ -315,6 +315,16 @@ export default function KeyListPage({
             setEditing(null);
           }}
           onSave={handleSave}
+        />
+      )}
+
+      {exporting && (
+        <KeyExportModal
+          record={exporting}
+          baseUrl={providerUrl(exporting)}
+          onClose={() => setExporting(null)}
+          onCopyKey={handleCopy}
+          notify={notify}
         />
       )}
 

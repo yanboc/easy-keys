@@ -12,11 +12,14 @@ vi.mock("./api", () => ({
   vaultExists: vi.fn(),
   vaultCreate: vi.fn(),
   vaultUnlock: vi.fn(),
+  // 默认无存活会话：恢复失败，回退锁屏
+  vaultResume: vi.fn(() => Promise.reject(new Error("会话已过期"))),
   vaultLock: vi.fn(),
   biometricStatus: vi.fn(),
   biometricUnlock: vi.fn(),
   getDefaultProviders: vi.fn(),
   resizeWindow: vi.fn(() => Promise.resolve()),
+  appHide: vi.fn(() => Promise.resolve()),
   onWindowFocus: vi.fn((cb: (focused: boolean) => void) => {
     mocks.focusCb = cb;
     return Promise.resolve(() => {});
@@ -108,6 +111,33 @@ describe("App 锁屏 / 生物识别解锁", () => {
     vi.mocked(Date.now).mockRestore();
   });
 
+  it("验证在途时焦点事件不重复触发（按一次指纹即可）", async () => {
+    vi.mocked(api.biometricStatus).mockResolvedValue(BIO_ENABLED);
+    // 验证挂起不结束：模拟弹窗打开期间焦点来回切换
+    let resolveUnlock: (rs: ReturnType<typeof makeRecord>[]) => void = () => {};
+    vi.mocked(api.biometricUnlock).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveUnlock = resolve;
+        })
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(api.biometricUnlock).toHaveBeenCalledTimes(1);
+    });
+    // 弹窗抢占焦点导致的失焦/聚焦循环不应产生新的验证
+    mocks.focusCb?.(false);
+    mocks.focusCb?.(true);
+    mocks.focusCb?.(false);
+    mocks.focusCb?.(true);
+    expect(api.biometricUnlock).toHaveBeenCalledTimes(1);
+
+    resolveUnlock([makeRecord()]);
+    expect(await screen.findByText("我的 OpenAI")).toBeInTheDocument();
+  });
+
   it("生物识别取消 / 失败时替换为主密码输入框，不弹窗", async () => {
     vi.mocked(api.biometricStatus).mockResolvedValue(BIO_ENABLED);
     vi.mocked(api.biometricUnlock).mockRejectedValue(new Error("已取消身份验证"));
@@ -165,6 +195,17 @@ describe("App 锁屏 / 生物识别解锁", () => {
       expect(api.vaultUnlock).toHaveBeenCalledWith("masterpassword");
     });
     expect(await screen.findByText("我的 OpenAI")).toBeInTheDocument();
+  });
+
+  it("Rust 会话仍存活时启动直接恢复解锁（关窗重开不重新锁定）", async () => {
+    vi.mocked(api.vaultResume).mockResolvedValue([makeRecord()]);
+
+    render(<App />);
+
+    // 不出现锁屏，直接进主界面
+    expect(await screen.findByText("我的 OpenAI")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("主密码")).not.toBeInTheDocument();
+    expect(api.biometricStatus).not.toHaveBeenCalled();
   });
 
   it("保险库不存在时进入创建模式，不查询生物识别", async () => {

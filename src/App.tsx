@@ -48,10 +48,13 @@ const LANG_OPTIONS: { id: Lang; label: string }[] = [
 
 function LockScreen({
   mode,
+  autoTrigger,
   onUnlock,
   onBiometricUnlock,
 }: {
   mode: "create" | "unlock";
+  /** 进入锁屏时是否自动弹一次系统验证（启动时为 true；用户主动锁定后退后台，不弹） */
+  autoTrigger: boolean;
   onUnlock: (password: string) => void;
   onBiometricUnlock: (records: ApiKeyRecord[]) => void;
 }) {
@@ -65,15 +68,19 @@ function LockScreen({
   // 生物识别失败/取消后，把生物识别按钮替换为主密码输入框
   const [bioFailed, setBioFailed] = useState(false);
   const autoTriggered = useRef(false);
-  const lastBioAttempt = useRef(0);
+  // 在途守卫 + 冷却起点（按尝试「结束」计时）：系统验证弹窗会抢占焦点，
+  // 弹窗出现/关闭都会触发焦点事件，没有这两道闸会重复弹窗、要按多次指纹
+  const bioInFlight = useRef(false);
+  const lastBioSettle = useRef(0);
 
   const biometricAvailable = !!(biometric?.available && biometric?.enabled);
   const biometricReady = biometricAvailable && !bioFailed;
 
   const runBiometricUnlock = useCallback(async () => {
+    if (bioInFlight.current) return;
+    bioInFlight.current = true;
     setError("");
     setBioBusy(true);
-    lastBioAttempt.current = Date.now();
     try {
       const records = await api.biometricUnlock();
       onBiometricUnlock(records);
@@ -82,6 +89,8 @@ function LockScreen({
       setError(t("生物识别未完成，可使用主密码解锁"));
       setBioFailed(true);
     } finally {
+      bioInFlight.current = false;
+      lastBioSettle.current = Date.now();
       setBioBusy(false);
     }
   }, [onBiometricUnlock]);
@@ -98,8 +107,9 @@ function LockScreen({
       .then((s) => {
         if (cancelled) return;
         setBiometric(s);
-        // 已启用时进入锁屏自动触发一次系统验证（体验更顺；仅挂载后一次）
-        if (s.available && s.enabled && !autoTriggered.current) {
+        // 启动进入锁屏时自动触发一次系统验证（仅挂载后一次）；
+        // 用户主动锁定后退至后台，不触发，等下次聚焦时再弹
+        if (autoTrigger && s.available && s.enabled && !autoTriggered.current) {
           autoTriggered.current = true;
           runBiometricUnlock();
         }
@@ -108,17 +118,18 @@ function LockScreen({
     return () => {
       cancelled = true;
     };
-  }, [mode, runBiometricUnlock]);
+  }, [mode, autoTrigger, runBiometricUnlock]);
 
   // 锁定状态下，焦点每次切回本应用都自动触发一次系统验证；
-  // 冷却 5 秒：取消验证后焦点回落会立刻再触发，没有冷却会弹窗死循环
+  // 跳过在途验证 + 自上次结束冷却 5 秒（取消验证后焦点回落会立刻再触发）
   useEffect(() => {
     if (mode !== "unlock") return;
     let unlisten: (() => void) | undefined;
     api
       .onWindowFocus((focused) => {
         if (!focused || !biometricAvailableRef.current) return;
-        if (Date.now() - lastBioAttempt.current < 5000) return;
+        if (bioInFlight.current) return;
+        if (Date.now() - lastBioSettle.current < 5000) return;
         runBiometricUnlock();
       })
       .then((u) => {
@@ -237,12 +248,32 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [page, setPage] = useState<Page>("keys");
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  // 用户主动锁定后退至后台：本次锁屏不自动弹生物识别，等下次聚焦触发
+  const [justLocked, setJustLocked] = useState(false);
 
   useEffect(() => {
-    api
-      .vaultExists()
-      .then((exists) => setVaultState(exists ? "locked" : "need-create"))
-      .catch(() => setVaultState("need-create"));
+    (async () => {
+      let exists = false;
+      try {
+        exists = await api.vaultExists();
+      } catch {
+        setVaultState("need-create");
+        return;
+      }
+      if (!exists) {
+        setVaultState("need-create");
+        return;
+      }
+      // 关窗重开 / 前端重载：Rust 侧会话仍存活则直接恢复，不回到锁屏；
+      // 显式锁定与进程退出会清除会话，resume 失败才回退锁屏
+      try {
+        const rs = await api.vaultResume();
+        setRecords(rs);
+        setVaultState("unlocked");
+      } catch {
+        setVaultState("locked");
+      }
+    })();
   }, []);
 
   // 窗口尺寸随锁定状态联动（tauri.conf 初始尺寸即锁屏小窗，避免启动闪烁）
@@ -261,6 +292,7 @@ export default function App() {
       .then((rs) => {
         setPassword(pwd);
         setRecords(rs);
+        setJustLocked(false);
         setVaultState("unlocked");
       })
       .catch((e) => {
@@ -272,15 +304,19 @@ export default function App() {
   const handleBiometricUnlock = useCallback((rs: ApiKeyRecord[]) => {
     setPassword("");
     setRecords(rs);
+    setJustLocked(false);
     setVaultState("unlocked");
   }, []);
 
-  // 锁定：通知 Rust 侧清除会话主密码（fire-and-forget），前端清空状态回锁屏
+  // 锁定：清除会话（fire-and-forget）、回锁屏小窗、退至后台，
+  // 下次聚焦时由焦点监听自动触发生物识别
   const handleLock = useCallback(() => {
     api.vaultLock().catch(() => {});
+    api.appHide().catch(() => {});
     setPassword("");
     setRecords([]);
     setPage("keys");
+    setJustLocked(true);
     setVaultState("locked");
   }, []);
 
@@ -312,6 +348,7 @@ export default function App() {
     return (
       <LockScreen
         mode={vaultState === "need-create" ? "create" : "unlock"}
+        autoTrigger={!justLocked}
         onUnlock={handleUnlock}
         onBiometricUnlock={handleBiometricUnlock}
       />

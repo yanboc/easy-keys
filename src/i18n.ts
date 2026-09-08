@@ -87,6 +87,8 @@ const DICT: Record<string, string> = {
   "备注（可选）": "Notes (optional)",
   "记录用途、配额、到期时间等": "Purpose, quota, expiry, etc.",
   "取消": "Cancel",
+  "关闭": "Close",
+  "复制": "Copy",
   "保存": "Save",
 
   // ---- 连通性测速 ----

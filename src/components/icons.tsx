@@ -117,6 +117,17 @@ export function EyeOffIcon(props: IconProps) {
   );
 }
 
+/** 分享 / 导出（macOS 风格：方框 + 向上箭头） */
+export function ShareIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 3v11" />
+      <path d="M7.5 7 12 3l4.5 4" />
+      <path d="M5 11.5V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7.5" />
+    </Svg>
+  );
+}
+
 /** 复制 */
 export function CopyIcon(props: IconProps) {
   return (

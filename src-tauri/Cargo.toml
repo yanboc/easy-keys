@@ -1,6 +1,6 @@
 [package]
 name = "tokey"
-version = "0.4.3"
+version = "0.4.4"
 description = "Fully-local AI API Key manager: encrypted vault, speed test, env var injection"
 authors = ["tokey"]
 edition = "2021"

@@ -4,11 +4,11 @@ import type { ApiKeyRecord, ProviderTemplate } from "./types";
 /**
  * 遮蔽 API Key 显示。
  * - 长度 <= 8：全部遮蔽
- * - 否则保留前 4 位和后 4 位，中间遮蔽（最多 16 个 •）
+ * - 否则保留前 4 位和后 4 位，中间固定 4 个占位符（••••）
  */
 export function maskKey(key: string): string {
   if (key.length <= 8) return "•".repeat(key.length);
-  return `${key.slice(0, 4)}${"•".repeat(Math.min(key.length - 8, 16))}${key.slice(-4)}`;
+  return `${key.slice(0, 4)}••••${key.slice(-4)}`;
 }
 
 /**

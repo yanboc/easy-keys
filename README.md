@@ -159,7 +159,7 @@ npm run tauri build
 3. **测速隔离**：联网路径只有测速与表单里的「测速并获取模型」，均须用户主动点击；请求直连用户配置的端点，禁用重定向，默认 10s 超时。
 4. **最小权限**：Tauri capabilities 只开放文件对话框、剪贴板读取/写入与窗口尺寸调整；shell 配置写入在 Rust 侧完成。
 5. **明文导出需二次确认**：明文 JSON 导出前会弹出安全警告。
-6. **生物识别解锁（可选）**：开启后主密码托管于操作系统安全存储——macOS 为 Keychain 通用密码项（仅本应用可读），Windows 为 Credential Locker；读取前先经系统身份验证（Touch ID，可回退登录密码 / Windows Hello 指纹·面容·PIN），应用自身不落盘主密码。生物识别解锁期间主密码仅驻留 Rust 内存（Zeroizing），锁定即清除；Linux 不提供该入口。
+6. **生物识别解锁（可选）**：开启后主密码托管于操作系统安全存储——macOS 为 Keychain 通用密码项（仅本应用可读），Windows 为 Credential Locker；读取前先经系统身份验证（Touch ID，可回退登录密码 / Windows Hello 指纹·面容·PIN），应用自身不落盘主密码。解锁期间主密码以会话形式驻留 Rust 内存（Zeroizing），失焦/关窗不锁定，显式锁定或退出即清除；Linux 不提供该入口。
 
 ---
 

@@ -31,6 +31,11 @@ export function onWindowFocus(
   return getCurrentWindow().onFocusChanged(({ payload }) => cb(payload));
 }
 
+/** 锁定后退至后台（macOS 原生 hide，焦点交还之前的应用） */
+export function appHide(): Promise<void> {
+  return invoke("app_hide_cmd");
+}
+
 // ============ 保险库 ============
 
 export function vaultExists(): Promise<boolean> {
@@ -43,6 +48,11 @@ export function vaultCreate(password: string, confirm: string): Promise<void> {
 
 export function vaultUnlock(password: string): Promise<ApiKeyRecord[]> {
   return invoke<ApiKeyRecord[]>("vault_unlock_cmd", { password });
+}
+
+/** 用 Rust 侧仍存活的会话恢复解锁（关窗重开 / 前端重载）；失败则回退锁屏 */
+export function vaultResume(): Promise<ApiKeyRecord[]> {
+  return invoke<ApiKeyRecord[]>("vault_resume_cmd");
 }
 
 export function vaultAdd(

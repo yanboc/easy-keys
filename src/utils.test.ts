@@ -35,10 +35,10 @@ describe("maskKey", () => {
     expect(maskKey("abcdefgh")).toBe("••••••••");
   });
 
-  it("长密钥保留头尾 4 位", () => {
+  it("长密钥保留头尾 4 位，中间固定 4 个占位符", () => {
     const masked = maskKey("sk-1234567890abcdef");
-    // 头 4 位 sk-1 + 中间 min(19-8,16)=11 个点 + 尾 4 位 cdef
-    expect(masked).toBe("sk-1•••••••••••cdef");
+    // 头 4 位 sk-1 + 固定 4 个点 + 尾 4 位 cdef
+    expect(masked).toBe("sk-1••••cdef");
     // 不泄露中间
     expect(masked).not.toContain("2345");
   });

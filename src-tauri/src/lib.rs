@@ -35,7 +35,21 @@ fn vault_create_cmd(password: String, confirm: String) -> AppResult<()> {
 
 #[tauri::command]
 fn vault_unlock_cmd(password: String) -> AppResult<Vec<ApiKeyRecord>> {
-    let records = vault::unlock_vault(&password)?;
+    let pwd = Zeroizing::new(password);
+    let records = vault::unlock_vault(&pwd)?;
+    // 建立会话：关窗重开 / 前端重载时可直接恢复，不重新锁定；
+    // 仅显式锁定（vault_lock_cmd）或进程退出才清除
+    vault::set_session_password(pwd);
+    Ok(records.records)
+}
+
+/// 用内存中的会话密码恢复解锁状态（窗口重开 / 前端重载场景）。
+/// 未解锁过或已显式锁定时返回错误，前端据此回退到锁屏。
+#[tauri::command]
+fn vault_resume_cmd() -> AppResult<Vec<ApiKeyRecord>> {
+    let pwd = vault::session_password()
+        .ok_or_else(|| AppError::new("会话已过期，请重新解锁"))?;
+    let records = vault::unlock_vault(&pwd)?;
     Ok(records.records)
 }
 
@@ -169,6 +183,23 @@ fn biometric_unlock_cmd() -> AppResult<Vec<ApiKeyRecord>> {
     Ok(records.records)
 }
 
+/// 锁定后把应用退至后台：macOS 用 NSApplication.hide（焦点交还之前的前台应用，
+/// 下次点击 Dock 图标/切换回来时由前端监听焦点事件触发解锁验证）。
+#[tauri::command]
+fn app_hide_cmd(app: tauri::AppHandle) {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = app.hide();
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        use tauri::Manager;
+        if let Some(w) = app.get_webview_window("main") {
+            let _ = w.hide();
+        }
+    }
+}
+
 // ============ 环境变量 ============
 
 #[tauri::command]
@@ -294,11 +325,12 @@ pub fn run() {
     // 仅 e2e feature（真机 E2E 测试）下内嵌 WebDriver server；release 构建不包含
     #[cfg(feature = "e2e")]
     let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
-    builder
+    let app = builder
         .invoke_handler(tauri::generate_handler![
             vault_exists_cmd,
             vault_create_cmd,
             vault_unlock_cmd,
+            vault_resume_cmd,
             vault_lock_cmd,
             vault_add_cmd,
             vault_update_cmd,
@@ -324,13 +356,43 @@ pub fn run() {
             open_text_file_cmd,
             cleanup_old_installers_cmd,
             open_url_cmd,
+            app_hide_cmd,
         ])
-        .setup(|_app| {
+        .setup(|app| {
             // 启动后后台清理 ~/Downloads 里的旧版安装包（移入废纸篓）；
             // fire-and-forget，失败仅记日志，不阻塞启动
             installer_cleanup::run_silent();
+            // macOS 惯例：关窗即隐藏而非销毁——进程不退、前端状态与解锁会话保留，
+            // 失焦/关窗不再造成重新锁定（配合前端的会话恢复）
+            #[cfg(target_os = "macos")]
+            {
+                use tauri::Manager;
+                if let Some(w) = app.get_webview_window("main") {
+                    let w2 = w.clone();
+                    w.on_window_event(move |event| {
+                        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                            api.prevent_close();
+                            let _ = w2.hide();
+                        }
+                    });
+                }
+            }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|app_handle, event| {
+        // 点 Dock 图标重新打开：窗口只是被隐藏，直接 show 回来
+        #[cfg(target_os = "macos")]
+        if let tauri::RunEvent::Reopen { .. } = event {
+            use tauri::Manager;
+            if let Some(w) = app_handle.get_webview_window("main") {
+                let _ = w.show();
+                let _ = w.set_focus();
+            }
+        }
+        #[cfg(not(target_os = "macos"))]
+        let _ = (app_handle, &event);
+    });
 }

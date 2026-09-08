@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-09-08
+
+### Fixed
+
+- 修复锁定后需要按多次指纹才能解锁：系统验证弹窗会抢占窗口焦点，其出现/关闭触发的焦点事件与并发触发造成重复弹窗；现在同一时刻只允许一次验证在途，冷却从验证结束（而非开始）时计时，按一次指纹即可解锁
+
+### Changed
+
+- 锁定后应用自动退至后台（macOS NSApplication.hide，焦点交还之前的应用），锁屏不再立即弹验证；下次聚焦时自动触发一次系统验证
+- 失焦/关窗不再重新锁定：macOS 关窗改为隐藏（Dock 图标重开），解锁会话（Zeroizing，仅内存）保持到显式锁定或进程退出，窗口重开自动恢复
+- 密钥列表精简：遮蔽改为前 4 位 + 固定 4 个占位符 + 后 4 位；移除「环境变量」列；名称列限 12 字符、超长省略号
+- 密钥操作列新增「导出」：弹窗内可复制 API Key（默认打码、可切换显示）、Base URL、环境变量名
+
 ## [0.4.3] - 2026-09-08
 
 ### Fixed
@@ -112,7 +125,8 @@
 - 应用零联网：无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击测速
 - Tauri capabilities 最小权限：仅开放文件对话框、剪贴板读写与窗口尺寸调整
 
-[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.4.4...HEAD
+[0.4.4]: https://github.com/yanboc/easy-keys/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/yanboc/easy-keys/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/yanboc/easy-keys/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/yanboc/easy-keys/compare/v0.4.0...v0.4.1
