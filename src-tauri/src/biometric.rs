@@ -1,15 +1,18 @@
 //! 生物识别解锁：主密码托管于操作系统安全存储，应用自身不落盘。
 //!
-//! - macOS：主密码存入 Keychain 通用密码项，创建时绑定 SecAccessControl
-//!   （kSecAttrAccessibleWhenUnlockedThisDeviceOnly + userPresence），
-//!   由系统在该项被读取时强制 Touch ID / 登录密码验证——不是应用侧 gate。
+//! - macOS：主密码存入 Keychain 通用密码项（WhenUnlockedThisDeviceOnly），
+//!   读取前先经 LAContext 系统身份验证（DeviceOwnerAuthentication：Touch ID，
+//!   可回退登录密码）。注意不能用 kSecAttrAccessControl 绑定钥匙串项——
+//!   它需要 keychain-access-groups 授权，ad-hoc 签名携带该授权会被系统
+//!   直接杀进程（Killed: 9），因此身份验证做在应用侧（LAContext），
+//!   钥匙串项本身仅创建者应用可读（由系统按代码签名约束）。
 //! - Windows：主密码存入 Credential Locker（PasswordVault），
 //!   读取前先经 UserConsentVerifier.RequestVerificationAsync（Windows Hello，
 //!   自动涵盖指纹 / 面容 / PIN）验证。
 //! - Linux 等其他平台：不可用，前端隐藏入口。
 //!
-//! 存在性检查一律走非交互路径（kSecUseAuthenticationUIFail / Credential Locker
-//! 直接查询），不会触发生物识别弹窗。
+//! 存在性检查一律走非交互路径（不带 kSecReturnData 的元数据查询 /
+//! Credential Locker 直接查询），不会触发生物识别弹窗。
 
 use crate::error::AppResult;
 use serde::Serialize;
@@ -34,6 +37,8 @@ const ERR_SEC_AUTH_FAILED: i32 = -25293;
 const ERR_SEC_ITEM_NOT_FOUND: i32 = -25300;
 #[cfg(any(target_os = "macos", test))]
 const ERR_SEC_INTERACTION_NOT_ALLOWED: i32 = -25308;
+#[cfg(any(target_os = "macos", test))]
+const ERR_SEC_MISSING_ENTITLEMENT: i32 = -34018;
 
 /// macOS Keychain OSStatus → 用户可读信息
 #[cfg(any(target_os = "macos", test))]
@@ -43,6 +48,7 @@ fn sec_error_message(code: i32) -> String {
         ERR_SEC_AUTH_FAILED => "生物识别验证失败".to_string(),
         ERR_SEC_ITEM_NOT_FOUND => "尚未启用生物识别解锁".to_string(),
         ERR_SEC_INTERACTION_NOT_ALLOWED => "系统当前不允许进行身份验证".to_string(),
+        ERR_SEC_MISSING_ENTITLEMENT => "缺少钥匙串访问权限（应用签名问题）".to_string(),
         _ => format!("系统安全存储错误（{code}）"),
     }
 }
@@ -75,30 +81,32 @@ fn consent_error_message(code: i32) -> String {
     }
 }
 
-// ---------- macOS：Keychain 访问控制项 ----------
+// ---------- macOS：LAContext 系统验证 + 普通 Keychain 项 ----------
 
 #[cfg(target_os = "macos")]
 mod imp {
     use super::{sec_error_message, BiometricStatus};
     use crate::error::{AppError, AppResult};
+    use block2::RcBlock;
+    use objc2::runtime::Bool;
     use objc2_core_foundation::{
         kCFBooleanTrue, CFData, CFDictionary, CFRetained, CFString, CFType,
     };
+    use objc2_foundation::{NSError, NSString};
     use objc2_local_authentication::{LAContext, LAPolicy};
-    // kSecUseAuthenticationUIFail 仍是非交互探测的最简方式（官方建议的
-    // LAContext.interactionNotAllowed 需要把 context 塞进每次查询，等价但更啰嗦）
-    #[allow(deprecated)]
     use objc2_security::{
-        errSecItemNotFound, errSecSuccess, kSecAttrAccessControl, kSecAttrAccount,
+        errSecItemNotFound, errSecSuccess, kSecAttrAccessible, kSecAttrAccount,
         kSecAttrAccessibleWhenUnlockedThisDeviceOnly, kSecAttrService, kSecClass,
-        kSecClassGenericPassword, kSecReturnData, kSecUseAuthenticationUI,
-        kSecUseAuthenticationUIFail, kSecValueData, SecAccessControl, SecAccessControlCreateFlags,
-        SecItemAdd, SecItemCopyMatching, SecItemDelete,
+        kSecClassGenericPassword, kSecReturnData, kSecValueData, SecItemAdd,
+        SecItemCopyMatching, SecItemDelete,
     };
     use std::ptr::NonNull;
+    use std::time::Duration;
 
     const SERVICE: &str = "com.easykeys.app";
     const ACCOUNT: &str = "vault-master";
+    /// 系统验证弹窗的说明文字（用户可见）
+    const AUTH_REASON: &str = "解锁 Tokey 保险库";
 
     /// SecItem* 函数接受未参数化的 CFDictionary（Opaque 键值）
     type Query = CFRetained<CFDictionary>;
@@ -130,55 +138,44 @@ mod imp {
         )
     }
 
-    /// 生物识别（Touch ID）是否可用。canEvaluatePolicy 只探测、不弹窗。
-    fn is_available() -> bool {
+    fn can_evaluate(policy: LAPolicy) -> bool {
         let ctx = unsafe { LAContext::new() };
-        unsafe { ctx.canEvaluatePolicy_error(LAPolicy::DeviceOwnerAuthenticationWithBiometrics) }
-            .is_ok()
+        unsafe { ctx.canEvaluatePolicy_error(policy) }.is_ok()
     }
 
-    /// 托管项是否存在。UIFail 保证不触发身份验证弹窗；不带 kSecReturnData
-    /// 的查询不需要满足访问控制，仅探测元数据。
-    #[allow(deprecated)]
+    /// 生物识别 / 系统密码验证是否可用。DeviceOwnerAuthentication 涵盖
+    /// Touch ID，无 Touch ID 的机器回退登录密码（macOS 的“PIN”等价物）。
+    fn is_available() -> bool {
+        can_evaluate(LAPolicy::DeviceOwnerAuthentication)
+    }
+
+    /// 托管项是否存在。不带 kSecReturnData 的查询只探测元数据，不弹窗。
     pub fn is_enabled() -> bool {
-        let (k_class, k_service, k_account, v_class) = unsafe { sec_keys() };
-        let k_auth_ui = unsafe { kSecUseAuthenticationUI };
-        let v_ui_fail = unsafe { kSecUseAuthenticationUIFail };
-        let service = CFString::from_static_str(SERVICE);
-        let account = CFString::from_static_str(ACCOUNT);
-        let query = build_query(
-            &[k_class, k_service, k_account, k_auth_ui],
-            &[v_class, &service, &account, v_ui_fail],
-        );
-        let status = unsafe { SecItemCopyMatching(&query, std::ptr::null_mut()) };
+        let status = unsafe { SecItemCopyMatching(&base_query(), std::ptr::null_mut()) };
         status == errSecSuccess
     }
 
     pub fn status() -> BiometricStatus {
         let available = is_available();
+        let label = if can_evaluate(LAPolicy::DeviceOwnerAuthenticationWithBiometrics) {
+            "Touch ID"
+        } else {
+            "登录密码"
+        };
         BiometricStatus {
             available,
             enabled: available && is_enabled(),
-            label: "Touch ID".to_string(),
+            label: label.to_string(),
         }
     }
 
-    /// 写入 / 覆盖托管项。创建时绑定 userPresence 访问控制：
-    /// 之后任何读取都必须由系统完成生物识别或登录密码验证。
+    /// 写入 / 覆盖托管项：普通通用密码项（ThisDeviceOnly，不随备份迁移），
+    /// 访问范围由系统按应用签名约束；身份验证在读取前由 LAContext 完成。
     pub fn enable(password: &str) -> AppResult<()> {
         let (k_class, k_service, k_account, v_class) = unsafe { sec_keys() };
-        let k_acl = unsafe { kSecAttrAccessControl };
+        let k_accessible = unsafe { kSecAttrAccessible };
         let k_value = unsafe { kSecValueData };
-        let protection: &CFType = unsafe { kSecAttrAccessibleWhenUnlockedThisDeviceOnly };
-        let acl = unsafe {
-            SecAccessControl::with_flags(
-                None,
-                protection,
-                SecAccessControlCreateFlags::UserPresence,
-                std::ptr::null_mut(),
-            )
-        }
-        .ok_or_else(|| AppError::new("无法创建访问控制策略"))?;
+        let accessible: &CFType = unsafe { kSecAttrAccessibleWhenUnlockedThisDeviceOnly };
 
         // 覆盖式启用：先删旧项（不存在不算错误）
         let status = unsafe { SecItemDelete(&base_query()) };
@@ -189,10 +186,9 @@ mod imp {
         let service = CFString::from_static_str(SERVICE);
         let account = CFString::from_static_str(ACCOUNT);
         let secret = CFData::from_bytes(password.as_bytes());
-        let acl_ref: &CFType = &acl;
         let query = build_query(
-            &[k_class, k_service, k_account, k_acl, k_value],
-            &[v_class, &service, &account, acl_ref, &secret],
+            &[k_class, k_service, k_account, k_accessible, k_value],
+            &[v_class, &service, &account, accessible, &secret],
         );
         let status = unsafe { SecItemAdd(&query, std::ptr::null_mut()) };
         if status != errSecSuccess {
@@ -201,9 +197,41 @@ mod imp {
         Ok(())
     }
 
-    /// 弹出系统生物识别验证并读取托管的主密码。
-    /// 验证由系统在读取该项时强制执行，密码不出 Rust 层。
+    /// 同步执行系统身份验证（Touch ID，可回退登录密码）。
+    /// evaluatePolicy 的回调由系统在内部队列触发，用 channel 阻塞等待。
+    fn authenticate() -> AppResult<()> {
+        let ctx = unsafe { LAContext::new() };
+        let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
+        let reason = NSString::from_str(AUTH_REASON);
+        let block = RcBlock::new(move |success: Bool, err: *mut NSError| {
+            let result = if success.as_bool() {
+                Ok(())
+            } else {
+                // LAError 的用户可读描述（如“已取消”），取不到则用通用文案
+                let msg = unsafe { err.as_ref() }
+                    .map(|e| e.localizedDescription().to_string())
+                    .unwrap_or_else(|| "身份验证失败".to_string());
+                Err(msg)
+            };
+            let _ = tx.send(result);
+        });
+        unsafe {
+            ctx.evaluatePolicy_localizedReason_reply(
+                LAPolicy::DeviceOwnerAuthentication,
+                &reason,
+                &block,
+            );
+        }
+        // 兜底超时：回调万一丢失，命令线程不能永久挂起
+        rx.recv_timeout(Duration::from_secs(120))
+            .map_err(|_| AppError::new("身份验证超时"))?
+            .map_err(AppError::new)
+    }
+
+    /// 先经系统身份验证（Touch ID / 登录密码），再读取托管的主密码。
+    /// 密码不出 Rust 层。
     pub fn read_password() -> AppResult<String> {
+        authenticate()?;
         let (k_class, k_service, k_account, v_class) = unsafe { sec_keys() };
         let k_return_data = unsafe { kSecReturnData };
         let yes: &CFType = unsafe { kCFBooleanTrue }.expect("kCFBooleanTrue 不可用");
@@ -314,7 +342,7 @@ mod imp {
     pub fn read_password() -> AppResult<String> {
         ensure_ro_initialized();
         let consent =
-            UserConsentVerifier::RequestVerificationAsync(&HSTRING::from("解锁 easy-keys 保险库"))
+            UserConsentVerifier::RequestVerificationAsync(&HSTRING::from("解锁 Tokey 保险库"))
                 .and_then(|op| op.get())
                 .map_err(|e| AppError::new(format!("Windows Hello 验证失败：{e}")))?;
         if consent != UserConsentVerificationResult::Verified {
@@ -410,6 +438,7 @@ mod tests {
         assert_eq!(sec_error_message(-25293), "生物识别验证失败");
         assert_eq!(sec_error_message(-25300), "尚未启用生物识别解锁");
         assert_eq!(sec_error_message(-25308), "系统当前不允许进行身份验证");
+        assert_eq!(sec_error_message(-34018), "缺少钥匙串访问权限（应用签名问题）");
         assert!(sec_error_message(-99999).contains("-99999"));
     }
 
@@ -434,6 +463,10 @@ mod tests {
         assert_eq!(
             ERR_SEC_INTERACTION_NOT_ALLOWED,
             objc2_security::errSecInteractionNotAllowed
+        );
+        assert_eq!(
+            ERR_SEC_MISSING_ENTITLEMENT,
+            objc2_security::errSecMissingEntitlement
         );
     }
 }

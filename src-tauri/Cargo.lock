@@ -2565,6 +2565,7 @@ version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e48e0b8b339e0d9d2ed4416b7f93f9d4daadff7d4dd797f89867cde11aeac607"
 dependencies = [
+ "block2",
  "objc2",
  "objc2-foundation",
 ]
@@ -4413,15 +4414,18 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokey"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "aes-gcm",
  "argon2",
  "base64 0.22.1",
+ "block2",
  "chrono",
  "dirs 5.0.1",
  "futures-util",
+ "objc2",
  "objc2-core-foundation",
+ "objc2-foundation",
  "objc2-local-authentication",
  "objc2-security",
  "rand 0.8.8",

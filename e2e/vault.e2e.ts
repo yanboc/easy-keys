@@ -24,11 +24,12 @@ describe('tokey 核心流程', () => {
   });
 
   it('创建保险库（密码 ≥8 位）并进入密钥管理页', async () => {
-    const pwdInput = await $('input[placeholder="主密码"]');
+    const pwdInput = await $('input[placeholder="主密码（至少 8 位）"]');
     await pwdInput.waitForExist({ timeout: 30000 });
     await pwdInput.setValue(PASSWORD);
-    await $('input[placeholder="确认主密码"]').setValue(PASSWORD);
-    await $('button=创建并进入').click();
+    // 极简锁屏无提交按钮，确认框里回车提交
+    await (await $('input[placeholder="确认主密码"]')).setValue(PASSWORD);
+    await browser.keys('Enter');
 
     // 进入密钥管理页，空列表提示出现
     const addBtn = await $('button*=新增密钥');

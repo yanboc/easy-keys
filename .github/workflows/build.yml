@@ -154,7 +154,7 @@ jobs:
           ARCH=$([[ "$TRIPLE" == aarch64* ]] && echo aarch64 || echo x64)
           VER=$(python3 -c "import json;print(json.load(open('src-tauri/tauri.conf.json'))['version'])")
           ./scripts/make-dmg.sh \
-            "src-tauri/target/${TRIPLE}/release/bundle/macos/tokey.app" \
+            "src-tauri/target/${TRIPLE}/release/bundle/macos/Tokey.app" \
             "src-tauri/target/${TRIPLE}/release/bundle/dmg/tokey_${VER}_${ARCH}.dmg"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -15,8 +15,11 @@ type Mode = "persistent" | "session" | "dotenv";
 
 export default function EnvPage({
   records,
+  embedded = false,
 }: {
   records: ApiKeyRecord[];
+  /** 嵌入「导出 / 导入」页作为标签页时，隐藏自身的页头标题/描述 */
+  embedded?: boolean;
 }) {
   useLang();
   const [mode, setMode] = useState<Mode>("persistent");
@@ -104,13 +107,17 @@ export default function EnvPage({
 
   return (
     <div>
-      <div className="page-title">{t("环境变量")}</div>
-      <div className="page-desc">
-        {t("一键把选中的 API Key 写入环境变量。当前检测到 shell 配置：")}
-        <code style={{ fontFamily: "var(--mono)", marginLeft: 4 }}>
-          {rcPath || t("未知")}
-        </code>
-      </div>
+      {!embedded && (
+        <>
+          <div className="page-title">{t("环境变量")}</div>
+          <div className="page-desc">
+            {t("一键把选中的 API Key 写入环境变量。当前检测到 shell 配置：")}
+            <code style={{ fontFamily: "var(--mono)", marginLeft: 4 }}>
+              {rcPath || t("未知")}
+            </code>
+          </div>
+        </>
+      )}
 
       <div className="card" style={{ maxWidth: 640 }}>
         <div className="field">

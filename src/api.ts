@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 import type {
   ApiKeyRecord,
   BiometricStatus,
@@ -7,6 +8,28 @@ import type {
   ProviderTemplate,
   SpeedTestResult,
 } from "./types";
+
+// ============ 窗口（锁屏小窗 ↔ 主界面） ============
+
+/** 调整最小尺寸 → 设定尺寸 → 居中（顺序保证双向切换都不被 minSize 钳制） */
+export async function resizeWindow(
+  width: number,
+  height: number,
+  minWidth: number,
+  minHeight: number
+): Promise<void> {
+  const win = getCurrentWindow();
+  await win.setMinSize(new LogicalSize(minWidth, minHeight));
+  await win.setSize(new LogicalSize(width, height));
+  await win.center();
+}
+
+/** 监听窗口焦点变化，resolve 出取消监听函数 */
+export function onWindowFocus(
+  cb: (focused: boolean) => void
+): Promise<() => void> {
+  return getCurrentWindow().onFocusChanged(({ payload }) => cb(payload));
+}
 
 // ============ 保险库 ============
 

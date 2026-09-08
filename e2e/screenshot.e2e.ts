@@ -26,16 +26,16 @@ async function ensureUnlockedWithKey() {
   const addBtn = await $('button*=新增密钥');
   if (await addBtn.isExisting()) return;
 
-  const pwdInput = await $('input[placeholder="主密码"]');
+  // 创建模式 placeholder 带位数提示；解锁模式为「主密码」。用属性前缀匹配两者
+  const pwdInput = await $('input[placeholder^="主密码"]');
   await pwdInput.waitForExist({ timeout: 30000 });
   const confirmInput = await $('input[placeholder="确认主密码"]');
   await pwdInput.setValue(PASSWORD);
   if (await confirmInput.isExisting()) {
     await confirmInput.setValue(PASSWORD);
-    await $('button=创建并进入').click();
-  } else {
-    await $('button=解锁').click();
   }
+  // 极简锁屏无提交按钮，回车提交
+  await browser.keys('Enter');
   await (await $('button*=新增密钥')).waitForExist({ timeout: 15000 });
 
   // 空列表时补一条密钥，便于检查表格行图标
@@ -66,6 +66,12 @@ describe('UI 视觉截图（无断言）', () => {
       localStorage.setItem('tokey-theme', 'light');
     });
     await browser.refresh();
+    // 若起始为锁屏/创建页，先截一张（含应用图标）再解锁；
+    // refresh 后等一拍让前端挂载，否则误判为已解锁
+    await browser.pause(800);
+    if (await (await $('input[type="password"]')).isExisting()) {
+      await saveShot('lock');
+    }
     await ensureUnlockedWithKey();
   });
 
@@ -74,7 +80,6 @@ describe('UI 视觉截图（无断言）', () => {
       ['keys', '密钥管理'],
       ['speedtest', '连通性测速'],
       ['export', '导出 / 导入'],
-      ['env', '环境变量'],
       ['settings', '设置'],
     ];
     for (const [name, label] of pages) {
@@ -90,5 +95,12 @@ describe('UI 视觉截图（无断言）', () => {
       console.log(`[screenshot] page=${name}, active nav=${activeText}`);
       await saveShot(name);
     }
+    // 环境变量已并入「导出 / 导入」的标签页，单独补一张
+    await (await $('.nav-item*=导出 / 导入')).click();
+    const envTab = await $('.tab*=环境变量');
+    await envTab.waitForExist({ timeout: 10000 });
+    await envTab.click();
+    await browser.pause(400);
+    await saveShot('env');
   });
 });

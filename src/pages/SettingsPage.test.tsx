@@ -19,11 +19,15 @@ function renderPage(overrides: Partial<Parameters<typeof SettingsPage>[0]> = {})
   const props = {
     password: "oldpassword",
     onPasswordChanged: vi.fn(),
-    onLock: vi.fn(),
     ...overrides,
   };
   render(<SettingsPage {...props} />);
   return props;
+}
+
+// 修改主密码已改为折叠面板：先展开再填表
+function openPasswordPanel() {
+  fireEvent.click(screen.getByRole("button", { name: "修改主密码" }));
 }
 
 function fillPasswords(oldPwd: string, newPwd: string, confirmPwd: string) {
@@ -41,9 +45,22 @@ describe("SettingsPage", () => {
     vi.mocked(api.biometricStatus).mockResolvedValue(BIO_UNAVAILABLE);
   });
 
+  it("修改主密码面板默认折叠，点击后展开", () => {
+    renderPage();
+
+    expect(
+      screen.queryByRole("button", { name: "更新主密码" })
+    ).not.toBeInTheDocument();
+    openPasswordPanel();
+    expect(
+      screen.getByRole("button", { name: "更新主密码" })
+    ).toBeInTheDocument();
+  });
+
   it("当前主密码错误时提示且不调用接口", () => {
     renderPage();
 
+    openPasswordPanel();
     fillPasswords("wrongpassword", "newpassword1", "newpassword1");
     fireEvent.click(screen.getByRole("button", { name: "更新主密码" }));
 
@@ -54,6 +71,7 @@ describe("SettingsPage", () => {
   it("新密码不足 8 位时提示", () => {
     renderPage();
 
+    openPasswordPanel();
     fillPasswords("oldpassword", "short", "short");
     fireEvent.click(screen.getByRole("button", { name: "更新主密码" }));
 
@@ -65,6 +83,7 @@ describe("SettingsPage", () => {
     vi.mocked(api.vaultChangePassword).mockResolvedValue(undefined);
     const props = renderPage();
 
+    openPasswordPanel();
     fillPasswords("oldpassword", "newpassword1", "newpassword1");
     fireEvent.click(screen.getByRole("button", { name: "更新主密码" }));
 
@@ -76,14 +95,6 @@ describe("SettingsPage", () => {
     });
     expect(props.onPasswordChanged).toHaveBeenCalledWith("newpassword1");
     expect(window.alert).toHaveBeenCalledWith("主密码已更新");
-  });
-
-  it("点击锁定应用触发 onLock", () => {
-    const props = renderPage();
-
-    fireEvent.click(screen.getByRole("button", { name: /锁定应用/ }));
-
-    expect(props.onLock).toHaveBeenCalledTimes(1);
   });
 
   it("平台不支持生物识别时不展示生物识别区块", async () => {

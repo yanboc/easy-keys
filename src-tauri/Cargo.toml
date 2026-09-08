@@ -1,6 +1,6 @@
 [package]
 name = "tokey"
-version = "0.4.2"
+version = "0.4.3"
 description = "Fully-local AI API Key manager: encrypted vault, speed test, env var injection"
 authors = ["tokey"]
 edition = "2021"
@@ -38,11 +38,16 @@ trash = "5"
 # E2E 专用：内嵌 WebDriver server，仅 e2e feature 下编译，release 构建严禁包含
 tauri-plugin-wdio-webdriver = { version = "1", optional = true }
 
-# 生物识别解锁：macOS 走 Keychain 访问控制项（SecAccessControl + userPresence）
+# 生物识别解锁：macOS 走 LAContext 系统验证 + 普通 Keychain 项。
+# 注意：kSecAttrAccessControl（ACL 钥匙串项）需要 keychain-access-groups 授权，
+# 而该授权在 ad-hoc 签名下会被系统直接杀进程（Killed: 9），故不可用。
 [target.'cfg(target_os = "macos")'.dependencies]
+block2 = { version = "0.6", features = ["alloc"] }
+objc2 = { version = "0.6", default-features = false }
 objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "CFData", "CFDictionary", "CFError", "CFNumber", "CFString"] }
-objc2-local-authentication = { version = "0.3", default-features = false, features = ["std", "LAContext"] }
-objc2-security = { version = "0.3", default-features = false, features = ["std", "SecBase", "SecAccessControl", "SecItem"] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSError", "NSString"] }
+objc2-local-authentication = { version = "0.3", default-features = false, features = ["std", "LAContext", "block2"] }
+objc2-security = { version = "0.3", default-features = false, features = ["std", "SecBase", "SecItem"] }
 
 # 生物识别解锁：Windows 走 Credential Locker + UserConsentVerifier（Windows Hello）
 [target.'cfg(target_os = "windows")'.dependencies]

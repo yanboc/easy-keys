@@ -214,43 +214,12 @@ export function PlusIcon(props: IconProps) {
   );
 }
 
-/**
- * 应用品牌图标（= 应用图标）：白底 squircle + 黑钥匙。
- * 与 src-tauri/icons 的应用图标保持同一设计；填充型，不走描边体系。
- */
-export function AppIcon({ size = 24, style, className }: IconProps) {
+/** 向下箭头 / 折叠面板展开指示 */
+export function ChevronDownIcon(props: IconProps) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className={className}
-      style={{ display: "block", flexShrink: 0, ...style }}
-    >
-      <rect
-        x="0.5"
-        y="0.5"
-        width="23"
-        height="23"
-        rx="5.4"
-        fill="#ffffff"
-        stroke="rgba(0,0,0,0.12)"
-      />
-      <g
-        transform="translate(3.4 3.4) scale(0.71)"
-        fill="none"
-        stroke="#1a1a1a"
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="7.5" cy="15.5" r="4.5" />
-        <path d="M10.9 12.1 20 3" />
-        <path d="M15.5 7.5l3 3" />
-        <path d="M13 10l2 2" />
-      </g>
-    </svg>
+    <Svg {...props}>
+      <path d="M6 9l6 6 6-6" />
+    </Svg>
   );
 }
 

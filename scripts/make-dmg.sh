@@ -10,14 +10,14 @@
 #    资源未封装（Sealed Resources=none），Gatekeeper 报「已损坏」。
 #    本脚本先对 .app 做干净的 ad-hoc 深签名（codesign --force --deep --sign -）。
 #
-# 用法: scripts/make-dmg.sh <tokey.app 路径> <输出 dmg 路径>
+# 用法: scripts/make-dmg.sh <Tokey.app 路径> <输出 dmg 路径>
 # ============================================================
 set -euo pipefail
 
 APP="$1"
 OUT="$2"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VOL="tokey"
+VOL="Tokey"
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT

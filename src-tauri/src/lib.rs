@@ -135,6 +135,15 @@ fn import_save_cmd(password: String, records: Vec<ApiKeyRecord>) -> AppResult<us
 
 #[tauri::command]
 fn biometric_status_cmd() -> BiometricStatus {
+    // E2E 构建强制不可用：Keychain 是全局的（不受 EASY_KEYS_DATA_DIR 隔离），
+    // 真实用户一旦启用过生物识别，E2E 锁屏就会弹系统验证框，测试不可控
+    if cfg!(feature = "e2e") {
+        return BiometricStatus {
+            available: false,
+            enabled: false,
+            label: String::new(),
+        };
+    }
     biometric::status()
 }
 

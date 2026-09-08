@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ComponentType } from "react";
 import * as api from "./api";
 import type { ApiKeyRecord, BiometricStatus } from "./types";
+import appIconUrl from "./assets/app-icon.png";
 import {
-  AppIcon,
   BoltIcon,
   BoxIcon,
   FingerprintIcon,
@@ -11,7 +11,7 @@ import {
   GitHubIcon,
   GlobeIcon,
   KeyIcon,
-  LeafIcon,
+  LockIcon,
   MoonIcon,
   SunIcon,
   type IconProps,
@@ -21,21 +21,23 @@ import { useTheme, toggleTheme } from "./theme";
 import KeyListPage from "./pages/KeyListPage";
 import SpeedTestPage from "./pages/SpeedTestPage";
 import ExportPage from "./pages/ExportPage";
-import EnvPage from "./pages/EnvPage";
 import SettingsPage from "./pages/SettingsPage";
 
-type Page = "keys" | "speedtest" | "export" | "env" | "settings";
+type Page = "keys" | "speedtest" | "export" | "settings";
 
 type VaultState = "checking" | "need-create" | "locked" | "unlocked";
 
 const GITHUB_URL = "https://github.com/yanboc/easy-keys";
+
+// 锁屏用小窗：刚好包裹 LOGO + 一个输入控件；解锁后恢复主界面尺寸
+const LOCK_WIN = { w: 360, h: 250, minW: 320, minH: 220 };
+const MAIN_WIN = { w: 960, h: 590, minW: 760, minH: 520 };
 
 // label 为 i18n 字典 key（中文原文），渲染时经 t() 翻译
 const NAV_ITEMS: { id: Page; label: string; icon: ComponentType<IconProps> }[] = [
   { id: "keys", label: "密钥管理", icon: KeyIcon },
   { id: "speedtest", label: "连通性测速", icon: BoltIcon },
   { id: "export", label: "导出 / 导入", icon: BoxIcon },
-  { id: "env", label: "环境变量", icon: LeafIcon },
   { id: "settings", label: "设置", icon: GearIcon },
 ];
 
@@ -60,23 +62,33 @@ function LockScreen({
   const [busy, setBusy] = useState(false);
   const [biometric, setBiometric] = useState<BiometricStatus | null>(null);
   const [bioBusy, setBioBusy] = useState(false);
+  // 生物识别失败/取消后，把生物识别按钮替换为主密码输入框
+  const [bioFailed, setBioFailed] = useState(false);
   const autoTriggered = useRef(false);
+  const lastBioAttempt = useRef(0);
 
-  const biometricReady = !!(biometric?.available && biometric?.enabled);
+  const biometricAvailable = !!(biometric?.available && biometric?.enabled);
+  const biometricReady = biometricAvailable && !bioFailed;
 
   const runBiometricUnlock = useCallback(async () => {
     setError("");
     setBioBusy(true);
+    lastBioAttempt.current = Date.now();
     try {
       const records = await api.biometricUnlock();
       onBiometricUnlock(records);
     } catch {
-      // 取消 / 失败不弹窗轰炸，仅提示可回退主密码输入
+      // 取消 / 失败后降级为主密码输入（按钮被替换掉）
       setError(t("生物识别未完成，可使用主密码解锁"));
+      setBioFailed(true);
     } finally {
       setBioBusy(false);
     }
   }, [onBiometricUnlock]);
+
+  // 焦点监听期间需要读到最新的可用性
+  const biometricAvailableRef = useRef(false);
+  biometricAvailableRef.current = biometricAvailable;
 
   useEffect(() => {
     if (mode !== "unlock") return;
@@ -95,6 +107,26 @@ function LockScreen({
       .catch(() => {});
     return () => {
       cancelled = true;
+    };
+  }, [mode, runBiometricUnlock]);
+
+  // 锁定状态下，焦点每次切回本应用都自动触发一次系统验证；
+  // 冷却 5 秒：取消验证后焦点回落会立刻再触发，没有冷却会弹窗死循环
+  useEffect(() => {
+    if (mode !== "unlock") return;
+    let unlisten: (() => void) | undefined;
+    api
+      .onWindowFocus((focused) => {
+        if (!focused || !biometricAvailableRef.current) return;
+        if (Date.now() - lastBioAttempt.current < 5000) return;
+        runBiometricUnlock();
+      })
+      .then((u) => {
+        unlisten = u;
+      })
+      .catch(() => {});
+    return () => {
+      unlisten?.();
     };
   }, [mode, runBiometricUnlock]);
 
@@ -123,17 +155,13 @@ function LockScreen({
 
   return (
     <div className="lock-screen">
-      <div className="lock-logo"><KeyIcon size={34} /></div>
-      <div>
-        <div className="lock-title" style={{ textAlign: "center" }}>
-          {mode === "create" ? t("创建加密保险库") : t("解锁保险库")}
-        </div>
-        <div className="lock-sub" style={{ textAlign: "center", marginTop: 6 }}>
-          {mode === "create"
-            ? t("所有 API Key 将使用主密码加密，仅存储在本机")
-            : t("输入主密码以解锁本地保险库")}
-        </div>
-      </div>
+      <img
+        src={appIconUrl}
+        alt="Tokey"
+        width={56}
+        height={56}
+        draggable={false}
+      />
       <form
         className="lock-form"
         onSubmit={(e) => {
@@ -143,7 +171,7 @@ function LockScreen({
       >
         {biometricReady && (
           <button
-            className="btn btn-primary btn-lg"
+            className="btn btn-primary"
             type="button"
             disabled={bioBusy}
             onClick={runBiometricUnlock}
@@ -151,48 +179,51 @@ function LockScreen({
             <FingerprintIcon size={16} />{" "}
             {bioBusy
               ? t("验证中…")
-              : t("使用 {label} 解锁", { label: biometric!.label })}
+              : t("使用 {label} 解锁", { label: t(biometric!.label) })}
           </button>
         )}
-        {biometricReady && (
-          <div className="lock-sub" style={{ textAlign: "center" }}>
-            {t("或使用主密码")}
-          </div>
-        )}
-        <input
-          className="input"
-          type="password"
-          placeholder={t("主密码")}
-          value={password}
-          autoFocus
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        {mode === "create" && (
-          <input
-            className="input"
-            type="password"
-            placeholder={t("确认主密码")}
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-          />
+        {/* 生物识别可用时只留一个按钮；失败/不可用则替换为密码框 */}
+        {!biometricReady && (
+          <>
+            <input
+              className="input"
+              type="password"
+              placeholder={
+                mode === "create" ? t("主密码（至少 8 位）") : t("主密码")
+              }
+              value={password}
+              autoFocus
+              disabled={busy}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                // 显式处理回车：WKWebView / WebDriver 合成事件不一定触发表单隐式提交
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  submit();
+                }
+              }}
+            />
+            {mode === "create" && (
+              <input
+                className="input"
+                type="password"
+                placeholder={t("确认主密码")}
+                value={confirm}
+                disabled={busy}
+                onChange={(e) => setConfirm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    submit();
+                  }
+                }}
+              />
+            )}
+          </>
         )}
         <div className="lock-error">{error}</div>
-        <button
-          className={`btn btn-lg ${biometricReady ? "" : "btn-primary"}`}
-          type="submit"
-          disabled={busy}
-        >
-          {busy
-            ? t("处理中…")
-            : mode === "create"
-              ? t("创建并进入")
-              : t("解锁")}
-        </button>
-        <div className="lock-sub" style={{ textAlign: "center" }}>
-          {biometricReady
-            ? t("主密码由系统安全存储托管；忘记主密码将无法找回数据")
-            : t("主密码不会存储在任何地方，忘记将无法找回数据")}
-        </div>
+        {/* 隐藏的提交按钮：让回车触发表单隐式提交（多输入框时浏览器需要 submit 按钮） */}
+        <button type="submit" disabled={busy} style={{ display: "none" }} aria-hidden="true" />
       </form>
     </div>
   );
@@ -214,6 +245,16 @@ export default function App() {
       .catch(() => setVaultState("need-create"));
   }, []);
 
+  // 窗口尺寸随锁定状态联动（tauri.conf 初始尺寸即锁屏小窗，避免启动闪烁）
+  useEffect(() => {
+    if (vaultState === "checking") return;
+    const target =
+      vaultState === "unlocked" ? MAIN_WIN : LOCK_WIN;
+    api
+      .resizeWindow(target.w, target.h, target.minW, target.minH)
+      .catch(() => {});
+  }, [vaultState]);
+
   const handleUnlock = useCallback((pwd: string) => {
     api
       .vaultUnlock(pwd)
@@ -232,6 +273,15 @@ export default function App() {
     setPassword("");
     setRecords(rs);
     setVaultState("unlocked");
+  }, []);
+
+  // 锁定：通知 Rust 侧清除会话主密码（fire-and-forget），前端清空状态回锁屏
+  const handleLock = useCallback(() => {
+    api.vaultLock().catch(() => {});
+    setPassword("");
+    setRecords([]);
+    setPage("keys");
+    setVaultState("locked");
   }, []);
 
   const refreshRecords = useCallback(
@@ -271,10 +321,6 @@ export default function App() {
   return (
     <div className="layout">
       <aside className="sidebar">
-        <div className="sidebar-brand">
-          <AppIcon size={30} />
-          <span>tokey</span>
-        </div>
         {NAV_ITEMS.map((item) => {
           const NavIcon = item.icon;
           return (
@@ -292,13 +338,12 @@ export default function App() {
         })}
         <div className="sidebar-footer">
           <button
-            className="link-btn"
+            className="footer-btn"
             title={GITHUB_URL}
             onClick={() => api.openUrl(GITHUB_URL).catch(() => {})}
           >
-            <GitHubIcon size={12} /> GitHub
+            <GitHubIcon size={14} />
           </button>
-          <span style={{ flex: 1 }} />
           <button
             className="footer-btn"
             title={theme === "dark" ? t("切换为浅色模式") : t("切换为深色模式")}
@@ -338,6 +383,13 @@ export default function App() {
               </>
             )}
           </div>
+          <button
+            className="footer-btn"
+            title={t("锁定应用")}
+            onClick={handleLock}
+          >
+            <LockIcon size={14} />
+          </button>
         </div>
       </aside>
       <main className="main">
@@ -356,9 +408,6 @@ export default function App() {
             onImported={() => refreshRecords()}
           />
         )}
-        {page === "env" && (
-          <EnvPage records={records} />
-        )}
         {page === "settings" && (
           <SettingsPage
             password={password}
@@ -366,13 +415,6 @@ export default function App() {
               // 生物识别会话下主密码不进入前端内存，保持为空
               setPassword((prev) => (prev === "" ? prev : newPwd))
             }
-            onLock={() => {
-              // 通知 Rust 侧清除会话主密码（fire-and-forget）
-              api.vaultLock().catch(() => {});
-              setPassword("");
-              setRecords([]);
-              setVaultState("locked");
-            }}
           />
         )}
       </main>

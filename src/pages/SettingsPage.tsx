@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
 import * as api from "../api";
 import type { BiometricStatus } from "../types";
-import { AppIcon, FingerprintIcon, LockIcon } from "../components/icons";
+import { ChevronDownIcon, FingerprintIcon } from "../components/icons";
 import { t, useLang } from "../i18n";
 import { version as APP_VERSION } from "../../package.json";
+import appIconUrl from "../assets/app-icon.png";
 
 export default function SettingsPage({
   password,
   onPasswordChanged,
-  onLock,
 }: {
   password: string;
   onPasswordChanged: (newPwd: string) => void;
-  onLock: () => void;
 }) {
   useLang();
+  const [pwdOpen, setPwdOpen] = useState(false);
   const [oldPwd, setOldPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
@@ -100,48 +100,63 @@ export default function SettingsPage({
   return (
     <div>
       <div className="page-title">{t("设置")}</div>
-      <div className="page-desc">{t("修改主密码、锁定应用与查看安全信息。")}</div>
+      <div className="page-desc">
+        {t("修改主密码、生物识别解锁与查看应用信息。")}
+      </div>
 
       <div className="card" style={{ maxWidth: 560 }}>
-        <div className="field-label" style={{ fontSize: 14, marginBottom: 14 }}>
-          {t("修改主密码")}
-        </div>
-        <div className="field">
-          <label className="field-label">{t("当前主密码")}</label>
-          <input
-            className="input"
-            type="password"
-            value={oldPwd}
-            onChange={(e) => setOldPwd(e.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label className="field-label">{t("新主密码（至少 8 位）")}</label>
-          <input
-            className="input"
-            type="password"
-            value={newPwd}
-            onChange={(e) => setNewPwd(e.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label className="field-label">{t("确认新主密码")}</label>
-          <input
-            className="input"
-            type="password"
-            value={confirmPwd}
-            onChange={(e) => setConfirmPwd(e.target.value)}
-          />
-        </div>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button
-            className="btn btn-primary"
-            onClick={changePassword}
-            disabled={busy}
-          >
-            {busy ? t("修改中…") : t("更新主密码")}
-          </button>
-        </div>
+        <button
+          className={`collapse-header ${pwdOpen ? "open" : ""}`}
+          onClick={() => setPwdOpen((v) => !v)}
+          aria-expanded={pwdOpen}
+        >
+          <span className="field-label" style={{ fontSize: 14 }}>
+            {t("修改主密码")}
+          </span>
+          <span className="chevron">
+            <ChevronDownIcon size={14} />
+          </span>
+        </button>
+        {pwdOpen && (
+          <div style={{ marginTop: 14 }}>
+            <div className="field">
+              <label className="field-label">{t("当前主密码")}</label>
+              <input
+                className="input"
+                type="password"
+                value={oldPwd}
+                onChange={(e) => setOldPwd(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label className="field-label">{t("新主密码（至少 8 位）")}</label>
+              <input
+                className="input"
+                type="password"
+                value={newPwd}
+                onChange={(e) => setNewPwd(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label className="field-label">{t("确认新主密码")}</label>
+              <input
+                className="input"
+                type="password"
+                value={confirmPwd}
+                onChange={(e) => setConfirmPwd(e.target.value)}
+              />
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                className="btn btn-primary"
+                onClick={changePassword}
+                disabled={busy}
+              >
+                {busy ? t("修改中…") : t("更新主密码")}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {bio?.available && (
@@ -159,8 +174,8 @@ export default function SettingsPage({
           >
             <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.8 }}>
               {t(
-                "使用 {label} 快速解锁保险库；主密码由系统安全存储托管，读取时由系统强制验证身份。",
-                { label: bio.label }
+                "使用 {label} 快速解锁保险库；主密码托管于系统钥匙串，仅本应用可读取。",
+                { label: t(bio.label) }
               )}
             </div>
             <button
@@ -170,8 +185,8 @@ export default function SettingsPage({
             >
               <FingerprintIcon size={14} />{" "}
               {bio.enabled
-                ? t("关闭 {label}", { label: bio.label })
-                : t("启用 {label}", { label: bio.label })}
+                ? t("关闭 {label}", { label: t(bio.label) })
+                : t("启用 {label}", { label: t(bio.label) })}
             </button>
           </div>
           {bioEnabling && !bio.enabled && (
@@ -215,34 +230,19 @@ export default function SettingsPage({
 
       <div className="card" style={{ maxWidth: 560, marginTop: 16 }}>
         <div className="field-label" style={{ fontSize: 14, marginBottom: 10 }}>
-          {t("安全")}
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn btn-danger" onClick={onLock}>
-            <LockIcon size={14} /> {t("锁定应用")}
-          </button>
-        </div>
-        <div
-          style={{
-            fontSize: 12,
-            color: "var(--text-faint)",
-            marginTop: 12,
-            lineHeight: 1.8,
-          }}
-        >
-          {t("锁定后需要重新输入主密码才能查看密钥。")}
-        </div>
-      </div>
-
-      <div className="card" style={{ maxWidth: 560, marginTop: 16 }}>
-        <div className="field-label" style={{ fontSize: 14, marginBottom: 10 }}>
           {t("关于")}
         </div>
         <div
           style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}
         >
-          <AppIcon size={36} />
-          <div style={{ fontWeight: 600 }}>tokey v{APP_VERSION}</div>
+          <img
+            src={appIconUrl}
+            alt="Tokey"
+            width={36}
+            height={36}
+            draggable={false}
+          />
+          <div style={{ fontWeight: 600 }}>Tokey v{APP_VERSION}</div>
         </div>
         <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.9 }}>
           <div>{t("完全本地运行的 AI API Key 管理工具")}</div>

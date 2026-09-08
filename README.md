@@ -1,6 +1,6 @@
 <div align="center">
 
-# tokey
+# Tokey
 
 [![Build](https://github.com/yanboc/easy-keys/actions/workflows/build.yml/badge.svg)](https://github.com/yanboc/easy-keys/actions/workflows/build.yml)
 ![Platform: macOS | Windows | Linux](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
@@ -8,7 +8,7 @@
 
 </div>
 
-完全本地的 AI API Key 管理工具（macOS / Windows / Linux）。tokey = token + key。原名 easy-keys，v0.4.2 起更名为 tokey，既有数据自动沿用无需迁移。
+完全本地的 AI API Key 管理工具（macOS / Windows / Linux）。Tokey = token + key。原名 easy-keys，v0.4.2 起更名为 Tokey，既有数据自动沿用无需迁移。
 
 加密保险库存储你的所有模型 API Key，支持一键测速、明文/加密导出、一键写入环境变量。应用自身**零联网**——没有遥测、没有更新检查、没有任何第三方连接，唯一可能联网的场景是你主动点击「测速」。
 
@@ -35,8 +35,7 @@
 | 一键测速 | 并发向各密钥配置的端点发起轻量请求，测量连通性与延迟；已禁用自动重定向防止密钥泄露 |
 | 智能表单 | 按 Base URL 自动建议密钥名称（Tab 填入）；表单内一键测速并拉取可用模型勾选保存 |
 | 提供商 / URL | 密钥列表的提供商列做成可点击链接，点击即复制该密钥的 BASE URL |
-| 导出 / 导入 | 明文 JSON、加密 `.ekey` 可迁移文件（独立口令，可在另一台机器导入） |
-| 环境变量 | 一键写入 shell 配置（`~/.zshrc` 等，幂等替换不堆积）或 Windows 用户环境变量；支持仅当前会话脚本与 `.env` 文件 |
+| 导出 / 导入 / 环境变量 | 明文 JSON、加密 `.ekey` 可迁移文件（独立口令，可在另一台机器导入）；一键写入 shell 配置（`~/.zshrc` 等，幂等替换不堆积）或 Windows 用户环境变量，支持仅当前会话脚本与 `.env` 文件 |
 | 安全细节 | 密钥默认遮蔽显示；复制到剪贴板 30 秒后自动清除；保险库原子写入防损坏 |
 | 安装体验 | macOS dmg 紧凑布局（app 居左、Applications 居右）；启动时自动将下载目录中的旧版安装包移入废纸篓 |
 | 界面 | 极简 macOS 原生风格；浅色/深色双主题跟随系统可手动切换；中英文双语跟随系统语言可手动切换 |
@@ -47,10 +46,10 @@
 
 从 [GitHub Releases](https://github.com/yanboc/easy-keys/releases/latest) 下载对应平台的安装包。
 
-1. **macOS**：打开 `.dmg`，将 tokey 拖入「应用程序」文件夹。应用为 ad-hoc 签名（未做 Apple 公证），首次打开若提示无法验证，在「系统设置 → 隐私与安全性」点击**仍要打开**，或执行：
+1. **macOS**：打开 `.dmg`，将 Tokey 拖入「应用程序」文件夹。应用为 ad-hoc 签名（未做 Apple 公证），首次打开若提示无法验证，在「系统设置 → 隐私与安全性」点击**仍要打开**，或执行：
 
    ```bash
-   xattr -cr /Applications/tokey.app
+   xattr -cr /Applications/Tokey.app
    ```
 
 2. **Windows**：运行 `.exe`（NSIS）或 `.msi` 安装程序。
@@ -158,9 +157,9 @@ npm run tauri build
 1. **零联网**：应用不包含任何遥测、崩溃上报、更新检查或第三方 SDK；启动后仅读写本地文件。
 2. **加密存储**：主密码永不上传，经 Argon2id（OWASP 推荐参数）派生密钥后以 AES-256-GCM 加密保险库。
 3. **测速隔离**：联网路径只有测速与表单里的「测速并获取模型」，均须用户主动点击；请求直连用户配置的端点，禁用重定向，默认 10s 超时。
-4. **最小权限**：Tauri capabilities 只开放文件对话框与剪贴板读取/写入；shell 配置写入在 Rust 侧完成。
+4. **最小权限**：Tauri capabilities 只开放文件对话框、剪贴板读取/写入与窗口尺寸调整；shell 配置写入在 Rust 侧完成。
 5. **明文导出需二次确认**：明文 JSON 导出前会弹出安全警告。
-6. **生物识别解锁（可选）**：开启后主密码托管于操作系统安全存储——macOS 为带 userPresence 访问控制的 Keychain 项、Windows 为 Credential Locker + Windows Hello 前置验证；读取由系统强制验证身份，应用自身不落盘主密码。生物识别解锁期间主密码仅驻留 Rust 内存（Zeroizing），锁定即清除；Linux 不提供该入口。
+6. **生物识别解锁（可选）**：开启后主密码托管于操作系统安全存储——macOS 为 Keychain 通用密码项（仅本应用可读），Windows 为 Credential Locker；读取前先经系统身份验证（Touch ID，可回退登录密码 / Windows Hello 指纹·面容·PIN），应用自身不落盘主密码。生物识别解锁期间主密码仅驻留 Rust 内存（Zeroizing），锁定即清除；Linux 不提供该入口。
 
 ---
 
@@ -168,4 +167,4 @@ npm run tauri build
 
 - 主密码丢失后**无法恢复**数据，请务必通过「导出 → 加密 .ekey」定期备份。
 - 持久化写入环境变量会把密钥以明文写入 shell 配置文件；若更在意静态安全，推荐「仅当前会话」模式。
-- 首次启动时若 macOS 弹出「tokey 想访问下载文件夹」授权框：这是旧版安装包自动清理功能（仅移入废纸篓、可恢复，同时识别改名前的 `easy-keys_*.dmg`），拒绝授权不影响任何正常使用。
+- 首次启动时若 macOS 弹出「Tokey 想访问下载文件夹」授权框：这是旧版安装包自动清理功能（仅移入废纸篓、可恢复，同时识别改名前的 `easy-keys_*.dmg`），拒绝授权不影响任何正常使用。

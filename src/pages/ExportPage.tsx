@@ -4,8 +4,9 @@ import type { ApiKeyRecord } from "../types";
 import { effectiveEnvName } from "../types";
 import { t, useLang } from "../i18n";
 import { FileIcon, LockIcon } from "../components/icons";
+import EnvPage from "./EnvPage";
 
-type Tab = "export" | "import";
+type Tab = "export" | "import" | "env";
 
 export default function ExportPage({
   records,
@@ -170,7 +171,15 @@ export default function ExportPage({
         >
           {t("导入")}
         </button>
+        <button
+          className={`tab ${tab === "env" ? "active" : ""}`}
+          onClick={() => setTab("env")}
+        >
+          {t("环境变量")}
+        </button>
       </div>
+
+      {tab === "env" && <EnvPage records={records} embedded />}
 
       {tab === "export" && (
         <div className="card" style={{ maxWidth: 560 }}>

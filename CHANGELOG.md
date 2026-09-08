@@ -4,7 +4,27 @@
 
 ## [Unreleased]
 
-## [0.4.2] - 2026-09-07
+## [0.4.3] - 2026-09-08
+
+### Fixed
+
+- 修复生物识别解锁完全不可用：macOS 侧原实现把主密码写入带 userPresence ACL 的 Keychain 项，而 ACL 项需要 `keychain-access-groups` 授权——ad-hoc 签名携带该授权会被系统直接杀进程、无授权则启用时报 errSecMissingEntitlement（-34018）。改为普通 Keychain 项 + 读取前 LAContext 系统验证（Touch ID，可回退登录密码），无 Touch ID 的机器也可凭登录密码使用
+- 修复窗口默认尺寸偏大：收窄至 960×590（最小 760×520）
+
+### Changed
+
+- 锁屏窗口改为刚好包裹 LOGO + 输入控件的小窗（360×250），解锁后恢复主界面尺寸（960×590），锁定自动缩回并退回密钥管理页
+- 锁屏生物识别已启用时只显示「使用 Touch ID 解锁」一个按钮，失败/取消后替换为主密码输入框
+- 锁定状态下焦点每次切回应用自动触发一次系统验证（5 秒冷却防弹窗循环）
+- 显示名改为首字母大写 Tokey（.app 名、窗口标题、关于页；制品文件名保持 `tokey_*` 小写不变）
+- 锁屏与「关于」页图标直接内嵌应用图标 PNG（与 .app 图标逐像素一致）；锁屏无标题/副标题/提交按钮，回车提交
+- 侧栏移除品牌区（图标 + 名称），只保留导航项
+- 侧栏底部图标按钮组（GitHub / 深浅色 / 语言 / 锁定）靠左排列，GitHub 去掉文字只留图标
+- 「环境变量」并入「导出 / 导入」页作为第三个标签页，导航精简为四项
+- 设置页「修改主密码」改为折叠面板，默认收起；移除「安全」卡片，「锁定应用」移入侧栏底部图标组
+- 整体布局收紧：主区/卡片/弹窗/表格/表单内边距与间距全面调小，侧栏收窄至 180px；字号不变
+
+## [0.4.2] - 2026-09-08
 
 ### Added
 
@@ -90,9 +110,10 @@
 ### Security
 
 - 应用零联网：无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击测速
-- Tauri capabilities 最小权限：仅开放文件对话框与剪贴板读写
+- Tauri capabilities 最小权限：仅开放文件对话框、剪贴板读写与窗口尺寸调整
 
-[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/yanboc/easy-keys/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/yanboc/easy-keys/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/yanboc/easy-keys/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/yanboc/easy-keys/compare/v0.3.0...v0.4.0

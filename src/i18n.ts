@@ -11,25 +11,14 @@ const listeners = new Set<() => void>();
 /** 中文原文 → 英文译文 */
 const DICT: Record<string, string> = {
   // ---- 锁屏 / 解锁 ----
-  "创建加密保险库": "Create Encrypted Vault",
-  "解锁保险库": "Unlock Vault",
-  "所有 API Key 将使用主密码加密，仅存储在本机":
-    "All API keys are encrypted with your master password and stored only on this device",
-  "输入主密码以解锁本地保险库": "Enter your master password to unlock the local vault",
+  "主密码（至少 8 位）": "Master password (min 8 chars)",
   "主密码至少需要 8 位": "Master password must be at least 8 characters",
   "两次输入的密码不一致": "Passwords do not match",
   "验证中…": "Verifying…",
   "使用 {label} 解锁": "Unlock with {label}",
-  "或使用主密码": "or use master password",
+  "登录密码": "login password",
   "主密码": "Master password",
   "确认主密码": "Confirm master password",
-  "处理中…": "Processing…",
-  "创建并进入": "Create & Enter",
-  "解锁": "Unlock",
-  "主密码由系统安全存储托管；忘记主密码将无法找回数据":
-    "Your master password is managed by the system secure storage; data cannot be recovered if forgotten",
-  "主密码不会存储在任何地方，忘记将无法找回数据":
-    "Your master password is not stored anywhere; data cannot be recovered if forgotten",
   "生物识别未完成，可使用主密码解锁":
     "Biometric authentication not completed; you can unlock with your master password",
   "解锁失败：{e}": "Unlock failed: {e}",
@@ -46,6 +35,7 @@ const DICT: Record<string, string> = {
   "切换为深色模式": "Switch to dark mode",
   "切换为浅色模式": "Switch to light mode",
   "界面语言": "Language",
+  "锁定应用": "Lock App",
 
   // ---- 密钥列表 ----
   "共 {n} 条密钥 · 全部加密存储在本地，绝不外传":
@@ -200,8 +190,8 @@ const DICT: Record<string, string> = {
     "Security note: persistent writes append keys in plain text to your shell config (usually readable only by you). If at-rest security matters more, use \"Current session only\" or a .env file and delete it after use.",
 
   // ---- 设置 ----
-  "修改主密码、锁定应用与查看安全信息。":
-    "Change master password, lock the app, and view security info.",
+  "修改主密码、生物识别解锁与查看应用信息。":
+    "Change master password, biometric unlock, and view app info.",
   "修改主密码": "Change Master Password",
   "当前主密码": "Current master password",
   "新主密码（至少 8 位）": "New master password (min 8 chars)",
@@ -217,17 +207,13 @@ const DICT: Record<string, string> = {
   "启用失败：{e}": "Enable failed: {e}",
   "请输入主密码": "Please enter your master password",
   "生物识别解锁": "Biometric Unlock",
-  "使用 {label} 快速解锁保险库；主密码由系统安全存储托管，读取时由系统强制验证身份。":
-    "Unlock the vault quickly with {label}; the master password is managed by the system secure storage and identity is enforced by the system on read.",
+  "使用 {label} 快速解锁保险库；主密码托管于系统钥匙串，仅本应用可读取。":
+    "Unlock the vault quickly with {label}; the master password is stored in the system keychain, readable only by this app.",
   "关闭 {label}": "Disable {label}",
   "启用 {label}": "Enable {label}",
   "输入主密码以确认启用": "Enter master password to confirm enabling",
   "确认启用": "Confirm",
   "启用中…": "Enabling…",
-  "安全": "Security",
-  "锁定应用": "Lock App",
-  "锁定后需要重新输入主密码才能查看密钥。":
-    "After locking, the master password is required to view keys again.",
   "关于": "About",
   "完全本地运行的 AI API Key 管理工具":
     "A fully-local AI API key manager",

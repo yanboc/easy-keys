@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tokey",
-  "version": "0.4.2",
+  "productName": "Tokey",
+  "version": "0.4.3",
   "identifier": "com.easykeys.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -13,11 +13,11 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "tokey · 本地 API Key 管理",
-        "width": 1080,
-        "height": 720,
-        "minWidth": 860,
-        "minHeight": 600,
+        "title": "Tokey · 本地 API Key 管理",
+        "width": 360,
+        "height": 250,
+        "minWidth": 320,
+        "minHeight": 220,
         "center": true
       }
     ],
