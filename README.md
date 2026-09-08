@@ -2,7 +2,7 @@
 
 # Tokey
 
-[![Build](https://github.com/yanboc/easy-keys/actions/workflows/build.yml/badge.svg)](https://github.com/yanboc/easy-keys/actions/workflows/build.yml)
+[![Build](https://github.com/yanboc/tokey/actions/workflows/build.yml/badge.svg)](https://github.com/yanboc/tokey/actions/workflows/build.yml)
 ![Platform: macOS | Windows | Linux](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
 ![Stack: Tauri 2 + React 18](https://img.shields.io/badge/Stack-Tauri%202%20%2B%20React%2018-blue)
 
@@ -44,7 +44,7 @@
 
 ## 安装
 
-从 [GitHub Releases](https://github.com/yanboc/easy-keys/releases/latest) 下载对应平台的安装包。
+从 [GitHub Releases](https://github.com/yanboc/tokey/releases/latest) 下载对应平台的安装包。
 
 1. **macOS**：打开 `.dmg`，将 Tokey 拖入「应用程序」文件夹。应用为 ad-hoc 签名（未做 Apple 公证），首次打开若提示无法验证，在「系统设置 → 隐私与安全性」点击**仍要打开**，或执行：
 

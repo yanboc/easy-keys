@@ -137,13 +137,13 @@
 - 应用零联网：无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击测速
 - Tauri capabilities 最小权限：仅开放文件对话框、剪贴板读写与窗口尺寸调整
 
-[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.4.5...HEAD
-[0.4.5]: https://github.com/yanboc/easy-keys/compare/v0.4.4...v0.4.5
-[0.4.4]: https://github.com/yanboc/easy-keys/compare/v0.4.3...v0.4.4
-[0.4.3]: https://github.com/yanboc/easy-keys/compare/v0.4.2...v0.4.3
-[0.4.2]: https://github.com/yanboc/easy-keys/compare/v0.4.1...v0.4.2
-[0.4.1]: https://github.com/yanboc/easy-keys/compare/v0.4.0...v0.4.1
-[0.4.0]: https://github.com/yanboc/easy-keys/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/yanboc/easy-keys/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/yanboc/easy-keys/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/yanboc/easy-keys/releases/tag/v0.1.0
+[Unreleased]: https://github.com/yanboc/tokey/compare/v0.4.5...HEAD
+[0.4.5]: https://github.com/yanboc/tokey/compare/v0.4.4...v0.4.5
+[0.4.4]: https://github.com/yanboc/tokey/compare/v0.4.3...v0.4.4
+[0.4.3]: https://github.com/yanboc/tokey/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/yanboc/tokey/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/yanboc/tokey/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/yanboc/tokey/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/yanboc/tokey/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/yanboc/tokey/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/yanboc/tokey/releases/tag/v0.1.0

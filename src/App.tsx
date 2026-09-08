@@ -25,7 +25,7 @@ type Page = "keys" | "speedtest" | "export" | "settings";
 
 type VaultState = "checking" | "need-create" | "locked" | "unlocked";
 
-const GITHUB_URL = "https://github.com/yanboc/easy-keys";
+const GITHUB_URL = "https://github.com/yanboc/tokey";
 
 // 解锁页用小窗：刚好包裹一个输入控件；解锁后恢复主界面尺寸
 const LOCK_WIN = { w: 360, h: 250, minW: 320, minH: 220 };
