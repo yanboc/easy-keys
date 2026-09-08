@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# easy-keys 一键自回归测试
+# tokey 一键自回归测试
 # 用法:
 #   ./run.sh                # 完整回归（类型+前端+Rust+构建）
 #   ./run.sh --skip-build   # 跳过构建验证（更快）
@@ -44,7 +44,7 @@ run_step() { # run_step <名称> <命令...>
   fi
 }
 
-echo -e "${BLUE}========== easy-keys 自回归测试 ==========${NC}"
+echo -e "${BLUE}========== tokey 自回归测试 ==========${NC}"
 echo "工作目录: $ROOT"
 echo "开始时间: $(date '+%Y-%m-%d %H:%M:%S')"
 echo ""

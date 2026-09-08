@@ -54,7 +54,7 @@ describe("App 锁屏 / 生物识别解锁", () => {
     });
 
     resolveUnlock([makeRecord()]);
-    expect(await screen.findByText("easy-keys")).toBeInTheDocument();
+    expect(await screen.findByText("tokey")).toBeInTheDocument();
     // 记录已载入（密钥列表页显示名称）
     expect(await screen.findByText("我的 OpenAI")).toBeInTheDocument();
   });

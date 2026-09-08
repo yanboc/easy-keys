@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# easy-keys macOS dmg 打包（供 CI 使用）
+# tokey macOS dmg 打包（供 CI 使用）
 #
 # 为什么不用 tauri 自带的 dmg bundler：
 # 1. 布局失效 —— bundle_dmg.sh 的窗口布局依赖 Finder AppleScript，
@@ -10,14 +10,14 @@
 #    资源未封装（Sealed Resources=none），Gatekeeper 报「已损坏」。
 #    本脚本先对 .app 做干净的 ad-hoc 深签名（codesign --force --deep --sign -）。
 #
-# 用法: scripts/make-dmg.sh <easy-keys.app 路径> <输出 dmg 路径>
+# 用法: scripts/make-dmg.sh <tokey.app 路径> <输出 dmg 路径>
 # ============================================================
 set -euo pipefail
 
 APP="$1"
 OUT="$2"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VOL="easy-keys"
+VOL="tokey"
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT

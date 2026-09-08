@@ -3,14 +3,21 @@ import type { ComponentType } from "react";
 import * as api from "./api";
 import type { ApiKeyRecord, BiometricStatus } from "./types";
 import {
+  AppIcon,
   BoltIcon,
   BoxIcon,
   FingerprintIcon,
   GearIcon,
+  GitHubIcon,
+  GlobeIcon,
   KeyIcon,
   LeafIcon,
+  MoonIcon,
+  SunIcon,
   type IconProps,
 } from "./components/icons";
+import { t, useLang, setLang, type Lang } from "./i18n";
+import { useTheme, toggleTheme } from "./theme";
 import KeyListPage from "./pages/KeyListPage";
 import SpeedTestPage from "./pages/SpeedTestPage";
 import ExportPage from "./pages/ExportPage";
@@ -21,12 +28,20 @@ type Page = "keys" | "speedtest" | "export" | "env" | "settings";
 
 type VaultState = "checking" | "need-create" | "locked" | "unlocked";
 
+const GITHUB_URL = "https://github.com/yanboc/easy-keys";
+
+// label 为 i18n 字典 key（中文原文），渲染时经 t() 翻译
 const NAV_ITEMS: { id: Page; label: string; icon: ComponentType<IconProps> }[] = [
   { id: "keys", label: "密钥管理", icon: KeyIcon },
   { id: "speedtest", label: "连通性测速", icon: BoltIcon },
   { id: "export", label: "导出 / 导入", icon: BoxIcon },
   { id: "env", label: "环境变量", icon: LeafIcon },
   { id: "settings", label: "设置", icon: GearIcon },
+];
+
+const LANG_OPTIONS: { id: Lang; label: string }[] = [
+  { id: "zh", label: "简体中文" },
+  { id: "en", label: "English" },
 ];
 
 function LockScreen({
@@ -38,6 +53,7 @@ function LockScreen({
   onUnlock: (password: string) => void;
   onBiometricUnlock: (records: ApiKeyRecord[]) => void;
 }) {
+  useLang();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -56,7 +72,7 @@ function LockScreen({
       onBiometricUnlock(records);
     } catch {
       // 取消 / 失败不弹窗轰炸，仅提示可回退主密码输入
-      setError("生物识别未完成，可使用主密码解锁");
+      setError(t("生物识别未完成，可使用主密码解锁"));
     } finally {
       setBioBusy(false);
     }
@@ -85,11 +101,11 @@ function LockScreen({
   const submit = async () => {
     setError("");
     if (mode === "create" && password.length < 8) {
-      setError("主密码至少需要 8 位");
+      setError(t("主密码至少需要 8 位"));
       return;
     }
     if (mode === "create" && password !== confirm) {
-      setError("两次输入的密码不一致");
+      setError(t("两次输入的密码不一致"));
       return;
     }
     setBusy(true);
@@ -110,12 +126,12 @@ function LockScreen({
       <div className="lock-logo"><KeyIcon size={34} /></div>
       <div>
         <div className="lock-title" style={{ textAlign: "center" }}>
-          {mode === "create" ? "创建加密保险库" : "解锁保险库"}
+          {mode === "create" ? t("创建加密保险库") : t("解锁保险库")}
         </div>
         <div className="lock-sub" style={{ textAlign: "center", marginTop: 6 }}>
           {mode === "create"
-            ? "所有 API Key 将使用主密码加密，仅存储在本机"
-            : "输入主密码以解锁本地保险库"}
+            ? t("所有 API Key 将使用主密码加密，仅存储在本机")
+            : t("输入主密码以解锁本地保险库")}
         </div>
       </div>
       <form
@@ -133,18 +149,20 @@ function LockScreen({
             onClick={runBiometricUnlock}
           >
             <FingerprintIcon size={16} />{" "}
-            {bioBusy ? "验证中…" : `使用 ${biometric!.label} 解锁`}
+            {bioBusy
+              ? t("验证中…")
+              : t("使用 {label} 解锁", { label: biometric!.label })}
           </button>
         )}
         {biometricReady && (
           <div className="lock-sub" style={{ textAlign: "center" }}>
-            或使用主密码
+            {t("或使用主密码")}
           </div>
         )}
         <input
           className="input"
           type="password"
-          placeholder="主密码"
+          placeholder={t("主密码")}
           value={password}
           autoFocus
           onChange={(e) => setPassword(e.target.value)}
@@ -153,7 +171,7 @@ function LockScreen({
           <input
             className="input"
             type="password"
-            placeholder="确认主密码"
+            placeholder={t("确认主密码")}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
           />
@@ -164,12 +182,16 @@ function LockScreen({
           type="submit"
           disabled={busy}
         >
-          {busy ? "处理中…" : mode === "create" ? "创建并进入" : "解锁"}
+          {busy
+            ? t("处理中…")
+            : mode === "create"
+              ? t("创建并进入")
+              : t("解锁")}
         </button>
         <div className="lock-sub" style={{ textAlign: "center" }}>
           {biometricReady
-            ? "主密码由系统安全存储托管；忘记主密码将无法找回数据"
-            : "主密码不会存储在任何地方，忘记将无法找回数据"}
+            ? t("主密码由系统安全存储托管；忘记主密码将无法找回数据")
+            : t("主密码不会存储在任何地方，忘记将无法找回数据")}
         </div>
       </form>
     </div>
@@ -177,10 +199,13 @@ function LockScreen({
 }
 
 export default function App() {
+  const lang = useLang();
+  const theme = useTheme();
   const [vaultState, setVaultState] = useState<VaultState>("checking");
   const [records, setRecords] = useState<ApiKeyRecord[]>([]);
   const [password, setPassword] = useState("");
   const [page, setPage] = useState<Page>("keys");
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
 
   useEffect(() => {
     api
@@ -198,7 +223,7 @@ export default function App() {
         setVaultState("unlocked");
       })
       .catch((e) => {
-        alert(`解锁失败：${e}`);
+        alert(t("解锁失败：{e}", { e: String(e) }));
       });
   }, []);
 
@@ -219,7 +244,7 @@ export default function App() {
         api
           .vaultUnlock(password)
           .then(setRecords)
-          .catch((e) => alert(`读取失败：${e}`));
+          .catch((e) => alert(t("读取失败：{e}", { e: String(e) })));
       }
     },
     [password]
@@ -247,8 +272,8 @@ export default function App() {
     <div className="layout">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <span className="logo"><KeyIcon size={17} /></span>
-          <span>easy-keys</span>
+          <AppIcon size={30} />
+          <span>tokey</span>
         </div>
         {NAV_ITEMS.map((item) => {
           const NavIcon = item.icon;
@@ -261,13 +286,58 @@ export default function App() {
               <span className="nav-icon">
                 <NavIcon size={16} />
               </span>
-              <span>{item.label}</span>
+              <span>{t(item.label)}</span>
             </div>
           );
         })}
         <div className="sidebar-footer">
-          完全本地运行 · 零联网<br />
-          数据加密存储于本机
+          <button
+            className="link-btn"
+            title={GITHUB_URL}
+            onClick={() => api.openUrl(GITHUB_URL).catch(() => {})}
+          >
+            <GitHubIcon size={12} /> GitHub
+          </button>
+          <span style={{ flex: 1 }} />
+          <button
+            className="footer-btn"
+            title={theme === "dark" ? t("切换为浅色模式") : t("切换为深色模式")}
+            onClick={toggleTheme}
+          >
+            {theme === "dark" ? <SunIcon size={14} /> : <MoonIcon size={14} />}
+          </button>
+          <div className="footer-menu-wrap">
+            <button
+              className="footer-btn"
+              title={t("界面语言")}
+              onClick={() => setLangMenuOpen((v) => !v)}
+            >
+              <GlobeIcon size={14} />
+            </button>
+            {langMenuOpen && (
+              <>
+                {/* 透明遮罩：点击菜单外任意处关闭 */}
+                <div
+                  style={{ position: "fixed", inset: 0, zIndex: 49 }}
+                  onClick={() => setLangMenuOpen(false)}
+                />
+                <div className="footer-menu">
+                  {LANG_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      className={lang === opt.id ? "active" : ""}
+                      onClick={() => {
+                        setLang(opt.id);
+                        setLangMenuOpen(false);
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </aside>
       <main className="main">

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import * as api from "../api";
 import type { BiometricStatus } from "../types";
-import { FingerprintIcon, LockIcon } from "../components/icons";
+import { AppIcon, FingerprintIcon, LockIcon } from "../components/icons";
+import { t, useLang } from "../i18n";
+import { version as APP_VERSION } from "../../package.json";
 
 export default function SettingsPage({
   password,
@@ -12,6 +14,7 @@ export default function SettingsPage({
   onPasswordChanged: (newPwd: string) => void;
   onLock: () => void;
 }) {
+  useLang();
   const [oldPwd, setOldPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
@@ -31,15 +34,15 @@ export default function SettingsPage({
   const changePassword = async () => {
     // 生物识别会话下前端不持有主密码，跳过本地比对，由后端验证
     if (password && oldPwd !== password) {
-      alert("当前主密码不正确");
+      alert(t("当前主密码不正确"));
       return;
     }
     if (newPwd.length < 8) {
-      alert("新主密码至少需要 8 位");
+      alert(t("新主密码至少需要 8 位"));
       return;
     }
     if (newPwd !== confirmPwd) {
-      alert("两次输入的新密码不一致");
+      alert(t("两次输入的新密码不一致"));
       return;
     }
     setBusy(true);
@@ -49,9 +52,9 @@ export default function SettingsPage({
       setOldPwd("");
       setNewPwd("");
       setConfirmPwd("");
-      alert("主密码已更新");
+      alert(t("主密码已更新"));
     } catch (e) {
-      alert(`修改失败：${e}`);
+      alert(t("修改失败：{e}", { e: String(e) }));
     } finally {
       setBusy(false);
     }
@@ -69,7 +72,7 @@ export default function SettingsPage({
       await api.biometricDisable();
       setBio({ ...bio, enabled: false });
     } catch (e) {
-      alert(`关闭失败：${e}`);
+      alert(t("关闭失败：{e}", { e: String(e) }));
     } finally {
       setBioBusy(false);
     }
@@ -78,7 +81,7 @@ export default function SettingsPage({
   const confirmBiometricEnable = async () => {
     if (!bio) return;
     if (!bioPwd) {
-      alert("请输入主密码");
+      alert(t("请输入主密码"));
       return;
     }
     setBioBusy(true);
@@ -88,7 +91,7 @@ export default function SettingsPage({
       setBioEnabling(false);
       setBio({ ...bio, enabled: true });
     } catch (e) {
-      alert(`启用失败：${e}`);
+      alert(t("启用失败：{e}", { e: String(e) }));
     } finally {
       setBioBusy(false);
     }
@@ -96,15 +99,15 @@ export default function SettingsPage({
 
   return (
     <div>
-      <div className="page-title">设置</div>
-      <div className="page-desc">修改主密码、锁定应用与查看安全信息。</div>
+      <div className="page-title">{t("设置")}</div>
+      <div className="page-desc">{t("修改主密码、锁定应用与查看安全信息。")}</div>
 
       <div className="card" style={{ maxWidth: 560 }}>
         <div className="field-label" style={{ fontSize: 14, marginBottom: 14 }}>
-          修改主密码
+          {t("修改主密码")}
         </div>
         <div className="field">
-          <label className="field-label">当前主密码</label>
+          <label className="field-label">{t("当前主密码")}</label>
           <input
             className="input"
             type="password"
@@ -113,7 +116,7 @@ export default function SettingsPage({
           />
         </div>
         <div className="field">
-          <label className="field-label">新主密码（至少 8 位）</label>
+          <label className="field-label">{t("新主密码（至少 8 位）")}</label>
           <input
             className="input"
             type="password"
@@ -122,7 +125,7 @@ export default function SettingsPage({
           />
         </div>
         <div className="field">
-          <label className="field-label">确认新主密码</label>
+          <label className="field-label">{t("确认新主密码")}</label>
           <input
             className="input"
             type="password"
@@ -136,7 +139,7 @@ export default function SettingsPage({
             onClick={changePassword}
             disabled={busy}
           >
-            {busy ? "修改中…" : "更新主密码"}
+            {busy ? t("修改中…") : t("更新主密码")}
           </button>
         </div>
       </div>
@@ -144,7 +147,7 @@ export default function SettingsPage({
       {bio?.available && (
         <div className="card" style={{ maxWidth: 560, marginTop: 16 }}>
           <div className="field-label" style={{ fontSize: 14, marginBottom: 10 }}>
-            生物识别解锁
+            {t("生物识别解锁")}
           </div>
           <div
             style={{
@@ -155,8 +158,10 @@ export default function SettingsPage({
             }}
           >
             <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.8 }}>
-              使用 {bio.label} 快速解锁保险库；主密码由系统安全存储托管，
-              读取时由系统强制验证身份。
+              {t(
+                "使用 {label} 快速解锁保险库；主密码由系统安全存储托管，读取时由系统强制验证身份。",
+                { label: bio.label }
+              )}
             </div>
             <button
               className="btn"
@@ -164,12 +169,14 @@ export default function SettingsPage({
               disabled={bioBusy}
             >
               <FingerprintIcon size={14} />{" "}
-              {bio.enabled ? `关闭 ${bio.label}` : `启用 ${bio.label}`}
+              {bio.enabled
+                ? t("关闭 {label}", { label: bio.label })
+                : t("启用 {label}", { label: bio.label })}
             </button>
           </div>
           {bioEnabling && !bio.enabled && (
             <div className="field" style={{ marginTop: 12 }}>
-              <label className="field-label">输入主密码以确认启用</label>
+              <label className="field-label">{t("输入主密码以确认启用")}</label>
               <input
                 className="input"
                 type="password"
@@ -191,14 +198,14 @@ export default function SettingsPage({
                     setBioPwd("");
                   }}
                 >
-                  取消
+                  {t("取消")}
                 </button>
                 <button
                   className="btn btn-primary"
                   onClick={confirmBiometricEnable}
                   disabled={bioBusy}
                 >
-                  {bioBusy ? "启用中…" : "确认启用"}
+                  {bioBusy ? t("启用中…") : t("确认启用")}
                 </button>
               </div>
             </div>
@@ -208,11 +215,11 @@ export default function SettingsPage({
 
       <div className="card" style={{ maxWidth: 560, marginTop: 16 }}>
         <div className="field-label" style={{ fontSize: 14, marginBottom: 10 }}>
-          安全
+          {t("安全")}
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="btn btn-danger" onClick={onLock}>
-            <LockIcon size={14} /> 锁定应用
+            <LockIcon size={14} /> {t("锁定应用")}
           </button>
         </div>
         <div
@@ -223,24 +230,30 @@ export default function SettingsPage({
             lineHeight: 1.8,
           }}
         >
-          锁定后需要重新输入主密码才能查看密钥。
+          {t("锁定后需要重新输入主密码才能查看密钥。")}
         </div>
       </div>
 
       <div className="card" style={{ maxWidth: 560, marginTop: 16 }}>
         <div className="field-label" style={{ fontSize: 14, marginBottom: 10 }}>
-          关于
+          {t("关于")}
+        </div>
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}
+        >
+          <AppIcon size={36} />
+          <div style={{ fontWeight: 600 }}>tokey v{APP_VERSION}</div>
         </div>
         <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.9 }}>
-          <div>easy-keys v0.1.0</div>
-          <div>完全本地运行的 AI API Key 管理工具</div>
+          <div>{t("完全本地运行的 AI API Key 管理工具")}</div>
           <div style={{ marginTop: 4 }}>
-            · 密钥经 Argon2id + AES-256-GCM 加密存储在本机
+            {t("· 密钥经 Argon2id + AES-256-GCM 加密存储在本机")}
           </div>
-          <div>· 应用自身零联网：无遥测、无更新检查、无第三方请求</div>
-          <div>· 仅当你主动点击「测速」时才直连你配置的 API 端点</div>
+          <div>{t("· 支持 Touch ID / Windows Hello 生物识别解锁")}</div>
+          <div>{t("· 应用自身零联网：无遥测、无更新检查、无第三方请求")}</div>
+          <div>{t("· 仅当你主动点击「测速」时才直连你配置的 API 端点")}</div>
           <div style={{ marginTop: 4, color: "var(--text-faint)" }}>
-            请务必备份加密导出文件，主密码丢失后数据无法恢复。
+            {t("请务必备份加密导出文件，主密码丢失后数据无法恢复。")}
           </div>
         </div>
       </div>

@@ -55,6 +55,13 @@ export function vaultLock(): Promise<void> {
   return invoke("vault_lock_cmd");
 }
 
+// ============ 外部链接 ============
+
+/** 用系统默认浏览器打开 http(s) 链接 */
+export function openUrl(url: string): Promise<void> {
+  return invoke("open_url_cmd", { url });
+}
+
 // ============ 生物识别解锁 ============
 
 export function biometricStatus(): Promise<BiometricStatus> {

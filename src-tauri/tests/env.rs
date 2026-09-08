@@ -2,8 +2,8 @@
 //!
 //! 覆盖：幂等区块替换、会话脚本生成（sh/fish/ps1/bat）、.env 转义。
 
-use easy_keys_lib::env;
-use easy_keys_lib::models::ApiKeyRecord;
+use tokey_lib::env;
+use tokey_lib::models::ApiKeyRecord;
 
 fn rec(env_name: &str, key: &str) -> ApiKeyRecord {
     ApiKeyRecord {

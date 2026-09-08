@@ -209,6 +209,38 @@ fn cleanup_old_installers_cmd() -> AppResult<usize> {
     installer_cleanup::cleanup_downloads()
 }
 
+// ============ 外部链接 ============
+
+/// 用系统默认浏览器打开 http(s) 链接（如 GitHub 项目页）。
+/// 只允许 http/https scheme，拒绝一切其他输入；零新增依赖。
+#[tauri::command]
+fn open_url_cmd(url: String) -> AppResult<()> {
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err(AppError::new("仅支持 http/https 链接"));
+    }
+    #[cfg(target_os = "macos")]
+    let mut cmd = {
+        let mut c = std::process::Command::new("open");
+        c.arg(&url);
+        c
+    };
+    #[cfg(target_os = "windows")]
+    let mut cmd = {
+        let mut c = std::process::Command::new("cmd");
+        c.args(["/C", "start", "", &url]);
+        c
+    };
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let mut cmd = {
+        let mut c = std::process::Command::new("xdg-open");
+        c.arg(&url);
+        c
+    };
+    cmd.spawn()
+        .map_err(|e| AppError::new(format!("无法打开浏览器: {e}")))?;
+    Ok(())
+}
+
 #[tauri::command]
 async fn save_text_file_cmd(
     app: tauri::AppHandle,
@@ -282,6 +314,7 @@ pub fn run() {
             save_text_file_cmd,
             open_text_file_cmd,
             cleanup_old_installers_cmd,
+            open_url_cmd,
         ])
         .setup(|_app| {
             // 启动后后台清理 ~/Downloads 里的旧版安装包（移入废纸篓）；

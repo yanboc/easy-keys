@@ -1,6 +1,6 @@
 <div align="center">
 
-# easy-keys
+# tokey
 
 [![Build](https://github.com/yanboc/easy-keys/actions/workflows/build.yml/badge.svg)](https://github.com/yanboc/easy-keys/actions/workflows/build.yml)
 ![Platform: macOS | Windows | Linux](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
@@ -8,7 +8,7 @@
 
 </div>
 
-完全本地的 AI API Key 管理工具（macOS / Windows / Linux）。
+完全本地的 AI API Key 管理工具（macOS / Windows / Linux）。tokey = token + key。原名 easy-keys，v0.4.2 起更名为 tokey，既有数据自动沿用无需迁移。
 
 加密保险库存储你的所有模型 API Key，支持一键测速、明文/加密导出、一键写入环境变量。应用自身**零联网**——没有遥测、没有更新检查、没有任何第三方连接，唯一可能联网的场景是你主动点击「测速」。
 
@@ -34,10 +34,12 @@
 | 生物识别解锁 | 可选：主密码托管至系统安全存储，Touch ID / Windows Hello（指纹/面容/PIN）一键解锁，可回退主密码 |
 | 一键测速 | 并发向各密钥配置的端点发起轻量请求，测量连通性与延迟；已禁用自动重定向防止密钥泄露 |
 | 智能表单 | 按 Base URL 自动建议密钥名称（Tab 填入）；表单内一键测速并拉取可用模型勾选保存 |
+| 提供商 / URL | 密钥列表的提供商列做成可点击链接，点击即复制该密钥的 BASE URL |
 | 导出 / 导入 | 明文 JSON、加密 `.ekey` 可迁移文件（独立口令，可在另一台机器导入） |
 | 环境变量 | 一键写入 shell 配置（`~/.zshrc` 等，幂等替换不堆积）或 Windows 用户环境变量；支持仅当前会话脚本与 `.env` 文件 |
 | 安全细节 | 密钥默认遮蔽显示；复制到剪贴板 30 秒后自动清除；保险库原子写入防损坏 |
 | 安装体验 | macOS dmg 紧凑布局（app 居左、Applications 居右）；启动时自动将下载目录中的旧版安装包移入废纸篓 |
+| 界面 | 极简 macOS 原生风格；浅色/深色双主题跟随系统可手动切换；中英文双语跟随系统语言可手动切换 |
 
 ---
 
@@ -45,10 +47,10 @@
 
 从 [GitHub Releases](https://github.com/yanboc/easy-keys/releases/latest) 下载对应平台的安装包。
 
-1. **macOS**：打开 `.dmg`，将 easy-keys 拖入「应用程序」文件夹。应用为 ad-hoc 签名（未做 Apple 公证），首次打开若提示无法验证，在「系统设置 → 隐私与安全性」点击**仍要打开**，或执行：
+1. **macOS**：打开 `.dmg`，将 tokey 拖入「应用程序」文件夹。应用为 ad-hoc 签名（未做 Apple 公证），首次打开若提示无法验证，在「系统设置 → 隐私与安全性」点击**仍要打开**，或执行：
 
    ```bash
-   xattr -cr /Applications/easy-keys.app
+   xattr -cr /Applications/tokey.app
    ```
 
 2. **Windows**：运行 `.exe`（NSIS）或 `.msi` 安装程序。
@@ -147,6 +149,8 @@ npm run tauri build
 
 文件权限为仅当前用户可读写（0600）。加密导出 `.ekey` 文件可在任意平台导入。
 
+> 目录名保持 `easy-keys` 不改是有意为之：v0.4.2 更名后沿用原数据目录与 bundle identifier（`com.easykeys.app`），老用户的保险库与生物识别托管项无损保留。
+
 ---
 
 ## 安全模型
@@ -164,4 +168,4 @@ npm run tauri build
 
 - 主密码丢失后**无法恢复**数据，请务必通过「导出 → 加密 .ekey」定期备份。
 - 持久化写入环境变量会把密钥以明文写入 shell 配置文件；若更在意静态安全，推荐「仅当前会话」模式。
-- 首次启动时若 macOS 弹出「easy-keys 想访问下载文件夹」授权框：这是旧版安装包自动清理功能（仅移入废纸篓、可恢复），拒绝授权不影响任何正常使用。
+- 首次启动时若 macOS 弹出「tokey 想访问下载文件夹」授权框：这是旧版安装包自动清理功能（仅移入废纸篓、可恢复，同时识别改名前的 `easy-keys_*.dmg`），拒绝授权不影响任何正常使用。

@@ -2,7 +2,9 @@
 
 ## 项目简介
 
-easy-keys：完全本地的 AI API Key 管理工具。Tauri 2（Rust 后端）+ React 18 + Vite + TypeScript（前端）。应用自身**零联网**——无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击「测速」。
+tokey（原名 easy-keys，v0.4.2 更名）：完全本地的 AI API Key 管理工具。Tauri 2（Rust 后端）+ React 18 + Vite + TypeScript（前端）。应用自身**零联网**——无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击「测速」。
+
+更名后为兼容老用户数据**有意保持不变**的内部标识：bundle identifier `com.easykeys.app`、数据目录 `easy-keys/`、Keychain service、保险库加密 AAD、env 标记块前缀、`EASY_KEYS_DATA_DIR`。改这些等于清空老用户数据，禁止顺手「改名」。
 
 ## 常用命令
 

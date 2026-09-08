@@ -2,8 +2,8 @@
 //!
 //! 覆盖：加密 .ekey 往返、错误口令、明文 JSON 往返、非法输入、多记录。
 
-use easy_keys_lib::export_import;
-use easy_keys_lib::models::ApiKeyRecord;
+use tokey_lib::export_import;
+use tokey_lib::models::ApiKeyRecord;
 
 fn sample(name: &str, key: &str) -> ApiKeyRecord {
     ApiKeyRecord {

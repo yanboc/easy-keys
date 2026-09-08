@@ -53,7 +53,7 @@ describe("ExportPage", () => {
 
   it("加密导出主流程：导出并保存到文件", async () => {
     vi.mocked(api.exportEncrypted).mockResolvedValue("ENCRYPTED_CONTENT");
-    vi.mocked(api.saveTextFile).mockResolvedValue("/tmp/easy-keys.ekey");
+    vi.mocked(api.saveTextFile).mockResolvedValue("/tmp/tokey.ekey");
     renderPage();
 
     const pwdInputs = document.querySelectorAll('input[type="password"]');
@@ -67,12 +67,12 @@ describe("ExportPage", () => {
       expect(api.exportEncrypted).toHaveBeenCalledWith(records, "secret1");
     });
     expect(api.saveTextFile).toHaveBeenCalledWith(
-      expect.stringMatching(/^easy-keys-.*\.ekey$/),
+      expect.stringMatching(/^tokey-.*\.ekey$/),
       "ENCRYPTED_CONTENT"
     );
     await waitFor(() => {
       expect(window.alert).toHaveBeenCalledWith(
-        expect.stringContaining("已导出加密文件：/tmp/easy-keys.ekey")
+        expect.stringContaining("已导出加密文件：/tmp/tokey.ekey")
       );
     });
   });

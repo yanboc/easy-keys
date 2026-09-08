@@ -6,6 +6,7 @@ import {
   suggestNameFromBaseUrl,
 } from "../utils";
 import { fetchModels } from "../api";
+import { t, useLang } from "../i18n";
 import { BoltIcon, EyeIcon, EyeOffIcon } from "./icons";
 
 /** Tauri 命令抛出的错误序列化为 { message }，提取可读文案 */
@@ -27,6 +28,7 @@ export default function KeyFormModal({
   onCancel: () => void;
   onSave: (record: ApiKeyRecord) => void;
 }) {
+  useLang();
   const [form, setForm] = useState<ApiKeyRecord>({ ...initial });
   const [showKey, setShowKey] = useState(false);
 
@@ -124,15 +126,15 @@ export default function KeyFormModal({
 
   const submit = () => {
     if (!form.name.trim()) {
-      alert("请填写名称");
+      alert(t("请填写名称"));
       return;
     }
     if (!form.apiKey.trim() && form.authType !== "none") {
-      alert("请填写 API Key");
+      alert(t("请填写 API Key"));
       return;
     }
     if (!form.baseUrl.trim()) {
-      alert("请填写 Base URL");
+      alert(t("请填写 Base URL"));
       return;
     }
     onSave({
@@ -146,14 +148,14 @@ export default function KeyFormModal({
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-title">
-          {form.id ? "编辑密钥" : "新增密钥"}
+          {form.id ? t("编辑密钥") : t("新增密钥")}
         </div>
 
         <div className="field">
-          <label className="field-label">名称</label>
+          <label className="field-label">{t("名称")}</label>
           <input
             className="input"
-            placeholder="如：我的 OpenAI 主号"
+            placeholder={t("如：我的 OpenAI 主号")}
             value={form.name}
             onChange={(e) => set("name", e.target.value)}
             onKeyDown={(e) => {
@@ -165,12 +167,14 @@ export default function KeyFormModal({
             autoFocus
           />
           {showNameHint && nameSuggestion && (
-            <div className="field-hint">按 Tab 填入：{nameSuggestion}</div>
+            <div className="field-hint">
+              {t("按 Tab 填入：{name}", { name: nameSuggestion })}
+            </div>
           )}
         </div>
 
         <div className="field">
-          <label className="field-label">服务商模板</label>
+          <label className="field-label">{t("服务商模板")}</label>
           <select
             className="select"
             value={form.provider}
@@ -195,12 +199,14 @@ export default function KeyFormModal({
               resetFetch();
             }}
           />
-          <div className="field-hint">测速时会访问 {form.baseUrl}/models 等端点</div>
+          <div className="field-hint">
+            {t("测速时会访问 {url}/models 等端点", { url: form.baseUrl })}
+          </div>
         </div>
 
         <div className="field">
           <label className="field-label">
-            API Key {form.authType === "none" && "（当前模板无需认证，可留空）"}
+            API Key {form.authType === "none" && t("（当前模板无需认证，可留空）")}
           </label>
           <div style={{ display: "flex", gap: 8 }}>
             <input
@@ -213,7 +219,7 @@ export default function KeyFormModal({
             />
             <button
               className="icon-btn"
-              title={showKey ? "隐藏" : "显示"}
+              title={showKey ? t("隐藏") : t("显示")}
               style={{ border: "1px solid var(--border)" }}
               onClick={() => setShowKey((v) => !v)}
             >
@@ -223,7 +229,7 @@ export default function KeyFormModal({
         </div>
 
         <div className="field">
-          <label className="field-label">环境变量名</label>
+          <label className="field-label">{t("环境变量名")}</label>
           <input
             className="input"
             placeholder={autoEnvName}
@@ -232,12 +238,12 @@ export default function KeyFormModal({
             style={{ fontFamily: "var(--mono)" }}
           />
           <div className="field-hint">
-            留空将自动使用：{autoEnvName}
+            {t("留空将自动使用：{name}", { name: autoEnvName })}
           </div>
         </div>
 
         <div className="field">
-          <label className="field-label">模型列表（可选，逗号分隔）</label>
+          <label className="field-label">{t("模型列表（可选，逗号分隔）")}</label>
           <input
             className="input"
             placeholder="gpt-4o, gpt-4o-mini"
@@ -267,7 +273,7 @@ export default function KeyFormModal({
                 disabled={fetching}
               >
                 {fetching ? <span className="spinner" /> : <BoltIcon size={13} />}
-                测速并获取模型
+                {t("测速并获取模型")}
               </button>
               {fetchLatency !== null && !fetching && (
                 <span
@@ -275,13 +281,15 @@ export default function KeyFormModal({
                   style={{ fontSize: 12 }}
                 >
                   <span className="status-dot" />
-                  连通 · {fetchLatency}ms
+                  {t("连通 · {ms}ms", { ms: fetchLatency })}
                 </span>
               )}
             </div>
           )}
           {fetchError && (
-            <div className="field-hint speed-fail">获取失败：{fetchError}</div>
+            <div className="field-hint speed-fail">
+              {t("获取失败：{e}", { e: fetchError })}
+            </div>
           )}
           {fetchedModels.length > 0 && (
             <div style={{ marginTop: 6, maxHeight: 180, overflowY: "auto" }}>
@@ -305,10 +313,10 @@ export default function KeyFormModal({
         </div>
 
         <div className="field">
-          <label className="field-label">备注（可选）</label>
+          <label className="field-label">{t("备注（可选）")}</label>
           <textarea
             className="textarea"
-            placeholder="记录用途、配额、到期时间等"
+            placeholder={t("记录用途、配额、到期时间等")}
             value={form.notes}
             onChange={(e) => set("notes", e.target.value)}
           />
@@ -316,10 +324,10 @@ export default function KeyFormModal({
 
         <div className="modal-actions">
           <button className="btn" onClick={onCancel}>
-            取消
+            {t("取消")}
           </button>
           <button className="btn btn-primary" onClick={submit}>
-            保存
+            {t("保存")}
           </button>
         </div>
       </div>

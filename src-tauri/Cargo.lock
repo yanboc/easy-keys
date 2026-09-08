@@ -966,36 +966,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
-name = "easy-keys"
-version = "0.4.1"
-dependencies = [
- "aes-gcm",
- "argon2",
- "base64 0.22.1",
- "chrono",
- "dirs 5.0.1",
- "futures-util",
- "objc2-core-foundation",
- "objc2-local-authentication",
- "objc2-security",
- "rand 0.8.8",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-clipboard-manager",
- "tauri-plugin-dialog",
- "tauri-plugin-wdio-webdriver",
- "thiserror 2.0.20",
- "tokio",
- "trash",
- "uuid",
- "windows 0.56.0",
- "zeroize",
-]
-
-[[package]]
 name = "embed-resource"
 version = "3.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4440,6 +4410,36 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
+name = "tokey"
+version = "0.4.2"
+dependencies = [
+ "aes-gcm",
+ "argon2",
+ "base64 0.22.1",
+ "chrono",
+ "dirs 5.0.1",
+ "futures-util",
+ "objc2-core-foundation",
+ "objc2-local-authentication",
+ "objc2-security",
+ "rand 0.8.8",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-clipboard-manager",
+ "tauri-plugin-dialog",
+ "tauri-plugin-wdio-webdriver",
+ "thiserror 2.0.20",
+ "tokio",
+ "trash",
+ "uuid",
+ "windows 0.56.0",
+ "zeroize",
+]
 
 [[package]]
 name = "tokio"

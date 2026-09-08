@@ -32,12 +32,12 @@ export const config = {
       browserName: 'tauri',
       // 指向 debug 构建产物（须以 --features e2e 构建，见 npm run test:e2e:build）
       'tauri:options': {
-        application: './src-tauri/target/debug/easy-keys',
+        application: './src-tauri/target/debug/tokey',
       },
     },
   ],
   onPrepare() {
-    e2eDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'easy-keys-e2e-'));
+    e2eDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tokey-e2e-'));
     tauriServiceOptions.env.EASY_KEYS_DATA_DIR = e2eDataDir;
     // eslint-disable-next-line no-console
     console.log(`[e2e] 临时数据目录: ${e2eDataDir}`);

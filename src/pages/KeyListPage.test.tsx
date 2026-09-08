@@ -26,6 +26,7 @@ const records = [
     id: "r2",
     name: "DeepSeek 备用",
     provider: "deepseek",
+    baseUrl: "https://api.deepseek.com/v1",
     apiKey: "sk-deepseek00001111",
   }),
 ];
@@ -50,9 +51,39 @@ describe("KeyListPage", () => {
     // 默认遮蔽，不出现完整密钥
     expect(screen.getByText(maskKey(records[0].apiKey))).toBeInTheDocument();
     expect(screen.queryByText(records[0].apiKey)).not.toBeInTheDocument();
-    // 服务商 label 来自模板
-    expect(await screen.findByText("OpenAI")).toBeInTheDocument();
-    expect(await screen.findByText("DeepSeek")).toBeInTheDocument();
+    // 提供商列显示小写 id（可点击复制 BASE URL）
+    expect(await screen.findByText("openai")).toBeInTheDocument();
+    expect(await screen.findByText("deepseek")).toBeInTheDocument();
+  });
+
+  it("点击提供商名复制 BASE URL", async () => {
+    renderPage();
+
+    // 等按钮形态出现（providers 异步加载前会短暂渲染为纯文本 badge）
+    fireEvent.click(await screen.findByRole("button", { name: "deepseek" }));
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith("https://api.deepseek.com/v1");
+    });
+    expect(
+      await screen.findByText(/已复制 https:\/\/api\.deepseek\.com\/v1/)
+    ).toBeInTheDocument();
+  });
+
+  it("记录自身 baseUrl 为空时回退到提供商模板默认 URL", async () => {
+    render(
+      <KeyListPage
+        records={[makeRecord({ baseUrl: "" })]}
+        password="pwd"
+        onRecordsChange={() => {}}
+      />
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "openai" }));
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith("https://api.openai.com/v1");
+    });
   });
 
   it("点击眼睛图标切换显示 / 隐藏完整密钥", () => {

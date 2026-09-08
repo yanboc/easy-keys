@@ -4,6 +4,29 @@
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-09-07
+
+### Added
+
+- 浅色 / 深色双主题：默认跟随系统，侧栏底部按钮手动切换（选择会记住）
+- 界面中英文双语：默认跟随系统语言，侧栏底部菜单手动切换（简体中文 / English）
+
+### Changed
+
+- 应用更名为 tokey（token + key），界面品牌图标与应用图标统一为白底 squircle + 黑钥匙
+- 侧栏底部移除状态文案，改为 GitHub 项目页链接（点击用系统浏览器打开）
+- 密钥列表「服务商」列改为「提供商/URL」：显示提供商小写名（自定义提供商显示主机名），点击即复制 BASE URL
+- 设置页「关于」版本号改为直接读取 package.json，不再出现版本号滞后
+
+### Compatibility
+
+- 数据目录（`easy-keys/`）、bundle identifier（`com.easykeys.app`）、保险库加密 AAD、环境变量标记块、Keychain 托管项全部保持不变，老用户升级后数据与生物识别解锁无损沿用
+- 旧安装包清理同时识别 `tokey_*.dmg` 与改名前的 `easy-keys_*.dmg`
+
+### Notes
+
+- 仓库名保持 `yanboc/easy-keys` 不变，Release 产物文件名改为 `tokey_*`
+
 ## [0.4.1] - 2026-09-07
 
 ### Fixed
@@ -69,7 +92,8 @@
 - 应用零联网：无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击测速
 - Tauri capabilities 最小权限：仅开放文件对话框与剪贴板读写
 
-[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/yanboc/easy-keys/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/yanboc/easy-keys/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/yanboc/easy-keys/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/yanboc/easy-keys/compare/v0.2.0...v0.3.0

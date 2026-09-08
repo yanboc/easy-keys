@@ -9,7 +9,7 @@ const PASSWORD = 'e2e-test-password';
 const SHOT_DIR = '/tmp';
 
 async function saveShot(name: string) {
-  const file = `${SHOT_DIR}/easy-keys-${name}.png`;
+  const file = `${SHOT_DIR}/tokey-${name}.png`;
   try {
     await browser.saveScreenshot(file);
   } catch {
@@ -60,6 +60,12 @@ describe('UI 视觉截图（无断言）', () => {
     } catch {
       /* 忽略：无 tauri-plugin-wdio 时仅用于抑制自动聚焦 */
     }
+    // 同 vault.e2e.ts：钉住中文界面，截图语言与运行环境无关
+    await browser.execute(() => {
+      localStorage.setItem('tokey-lang', 'zh');
+      localStorage.setItem('tokey-theme', 'light');
+    });
+    await browser.refresh();
     await ensureUnlockedWithKey();
   });
 

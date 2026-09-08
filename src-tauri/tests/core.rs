@@ -5,8 +5,8 @@
 //! 隔离策略：所有需要文件系统的测试通过全局 Mutex 串行执行，
 //! 每个测试在锁内设置独立的 EASY_KEYS_DATA_DIR 临时目录，互不干扰。
 
-use easy_keys_lib::crypto;
-use easy_keys_lib::models::{ApiKeyRecord, RecordsFile, VaultFile};
+use tokey_lib::crypto;
+use tokey_lib::models::{ApiKeyRecord, RecordsFile, VaultFile};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
@@ -120,7 +120,7 @@ fn with_vault(tag: &str, body: impl FnOnce(&str) -> ()) {
     let guard = fs_lock().lock().unwrap_or_else(|e| e.into_inner());
     let _guard = guard;
     let dir = make_temp_dir(tag);
-    easy_keys_lib::vault::set_data_dir_for_tests(dir);
+    tokey_lib::vault::set_data_dir_for_tests(dir);
     body("password-123");
 }
 
@@ -128,30 +128,30 @@ fn with_vault(tag: &str, body: impl FnOnce(&str) -> ()) {
 fn test_vault_crud_full_cycle() {
     with_vault("crud", |pwd| {
         // 创建
-        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
-        assert!(easy_keys_lib::vault::vault_exists().unwrap());
+        tokey_lib::vault::create_vault(pwd, pwd).unwrap();
+        assert!(tokey_lib::vault::vault_exists().unwrap());
 
         // 添加
-        let rec = easy_keys_lib::vault::add_record(pwd, sample_record("我的 OpenAI", "sk-123")).unwrap();
+        let rec = tokey_lib::vault::add_record(pwd, sample_record("我的 OpenAI", "sk-123")).unwrap();
         assert!(!rec.id.is_empty());
-        let rec2 = easy_keys_lib::vault::add_record(pwd, sample_record("DeepSeek", "sk-456")).unwrap();
+        let rec2 = tokey_lib::vault::add_record(pwd, sample_record("DeepSeek", "sk-456")).unwrap();
 
         // 解锁验证
-        let records = easy_keys_lib::vault::unlock_vault(pwd).unwrap();
+        let records = tokey_lib::vault::unlock_vault(pwd).unwrap();
         assert_eq!(records.records.len(), 2);
 
         // 更新
         let mut updated = rec.clone();
         updated.name = "我的 OpenAI 主号".into();
-        let saved = easy_keys_lib::vault::update_record(pwd, updated).unwrap();
+        let saved = tokey_lib::vault::update_record(pwd, updated).unwrap();
         assert_eq!(saved.name, "我的 OpenAI 主号");
         // 创建时间应保留
         assert_eq!(saved.created_at, rec.created_at);
         assert!(saved.updated_at >= rec.updated_at);
 
         // 删除
-        easy_keys_lib::vault::delete_record(pwd, &rec.id).unwrap();
-        let after = easy_keys_lib::vault::unlock_vault(pwd).unwrap();
+        tokey_lib::vault::delete_record(pwd, &rec.id).unwrap();
+        let after = tokey_lib::vault::unlock_vault(pwd).unwrap();
         assert_eq!(after.records.len(), 1);
         assert_eq!(after.records[0].id, rec2.id);
     });
@@ -161,16 +161,16 @@ fn test_vault_crud_full_cycle() {
 fn test_vault_create_validation() {
     with_vault("create-validate", |pwd| {
         // 短密码拒绝
-        let err = easy_keys_lib::vault::create_vault("short", "short").unwrap_err();
+        let err = tokey_lib::vault::create_vault("short", "short").unwrap_err();
         assert!(err.message.contains("8 位"));
 
         // 两次不一致拒绝
-        let err = easy_keys_lib::vault::create_vault("password-123", "password-456").unwrap_err();
+        let err = tokey_lib::vault::create_vault("password-123", "password-456").unwrap_err();
         assert!(err.message.contains("不一致"));
 
         // 重复创建拒绝
-        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
-        let err = easy_keys_lib::vault::create_vault(pwd, pwd).unwrap_err();
+        tokey_lib::vault::create_vault(pwd, pwd).unwrap();
+        let err = tokey_lib::vault::create_vault(pwd, pwd).unwrap_err();
         assert!(err.message.contains("已存在"));
     });
 }
@@ -178,10 +178,10 @@ fn test_vault_create_validation() {
 #[test]
 fn test_update_nonexistent_fails() {
     with_vault("update-nonexist", |pwd| {
-        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
+        tokey_lib::vault::create_vault(pwd, pwd).unwrap();
         let mut rec = sample_record("幽灵", "sk-x");
         rec.id = "no-such-id".into();
-        let err = easy_keys_lib::vault::update_record(pwd, rec).unwrap_err();
+        let err = tokey_lib::vault::update_record(pwd, rec).unwrap_err();
         assert!(err.message.contains("不存在"));
     });
 }
@@ -189,8 +189,8 @@ fn test_update_nonexistent_fails() {
 #[test]
 fn test_delete_nonexistent_fails() {
     with_vault("delete-nonexist", |pwd| {
-        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
-        let err = easy_keys_lib::vault::delete_record(pwd, "no-such-id").unwrap_err();
+        tokey_lib::vault::create_vault(pwd, pwd).unwrap();
+        let err = tokey_lib::vault::delete_record(pwd, "no-such-id").unwrap_err();
         assert!(err.message.contains("不存在"));
     });
 }
@@ -198,9 +198,9 @@ fn test_delete_nonexistent_fails() {
 #[test]
 fn test_wrong_password_on_ops_fails() {
     with_vault("wrong-pwd-ops", |pwd| {
-        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
+        tokey_lib::vault::create_vault(pwd, pwd).unwrap();
         // 用错密码添加应失败（解锁失败）
-        let err = easy_keys_lib::vault::add_record("wrong-password", sample_record("x", "sk-1")).unwrap_err();
+        let err = tokey_lib::vault::add_record("wrong-password", sample_record("x", "sk-1")).unwrap_err();
         assert!(err.message.contains("密码错误"), "错误信息: {}", err.message);
     });
 }
@@ -208,16 +208,16 @@ fn test_wrong_password_on_ops_fails() {
 #[test]
 fn test_change_password() {
     with_vault("change-pwd", |pwd| {
-        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
-        easy_keys_lib::vault::add_record(pwd, sample_record("A", "sk-A")).unwrap();
+        tokey_lib::vault::create_vault(pwd, pwd).unwrap();
+        tokey_lib::vault::add_record(pwd, sample_record("A", "sk-A")).unwrap();
 
-        easy_keys_lib::vault::change_password(pwd, "new-password-1").unwrap();
+        tokey_lib::vault::change_password(pwd, "new-password-1").unwrap();
 
         // 旧密码应失效
-        let err = easy_keys_lib::vault::unlock_vault(pwd).unwrap_err();
+        let err = tokey_lib::vault::unlock_vault(pwd).unwrap_err();
         assert!(err.message.contains("密码错误"));
         // 新密码可解锁，数据完好
-        let records = easy_keys_lib::vault::unlock_vault("new-password-1").unwrap();
+        let records = tokey_lib::vault::unlock_vault("new-password-1").unwrap();
         assert_eq!(records.records.len(), 1);
         assert_eq!(records.records[0].api_key, "sk-A");
     });
@@ -226,17 +226,17 @@ fn test_change_password() {
 #[test]
 fn test_import_records_appends() {
     with_vault("import", |pwd| {
-        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
-        easy_keys_lib::vault::add_record(pwd, sample_record("已有", "sk-1")).unwrap();
+        tokey_lib::vault::create_vault(pwd, pwd).unwrap();
+        tokey_lib::vault::add_record(pwd, sample_record("已有", "sk-1")).unwrap();
 
         let incoming = vec![
             sample_record("迁移1", "sk-2"),
             sample_record("迁移2", "sk-3"),
         ];
-        let count = easy_keys_lib::vault::import_records(pwd, incoming).unwrap();
+        let count = tokey_lib::vault::import_records(pwd, incoming).unwrap();
         assert_eq!(count, 2);
 
-        let records = easy_keys_lib::vault::unlock_vault(pwd).unwrap();
+        let records = tokey_lib::vault::unlock_vault(pwd).unwrap();
         assert_eq!(records.records.len(), 3);
     });
 }
@@ -266,12 +266,12 @@ fn test_decrypt_tampered_ciphertext_fails() {
 #[test]
 fn test_unlock_corrupt_vault_json() {
     with_vault("corrupt-json", |pwd| {
-        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
+        tokey_lib::vault::create_vault(pwd, pwd).unwrap();
         // 直接把 vault.json 写成非法 JSON
-        let path = easy_keys_lib::vault::vault_path().unwrap();
+        let path = tokey_lib::vault::vault_path().unwrap();
         fs::write(&path, "{ this is not valid json !!!").unwrap();
 
-        let err = easy_keys_lib::vault::unlock_vault(pwd).unwrap_err();
+        let err = tokey_lib::vault::unlock_vault(pwd).unwrap_err();
         assert!(err.message.contains("JSON"), "错误信息: {}", err.message);
     });
 }
@@ -279,20 +279,20 @@ fn test_unlock_corrupt_vault_json() {
 #[test]
 fn test_create_vault_empty_password_rejected() {
     with_vault("empty-pwd", |_pwd| {
-        let err = easy_keys_lib::vault::create_vault("", "").unwrap_err();
+        let err = tokey_lib::vault::create_vault("", "").unwrap_err();
         assert!(err.message.contains("8 位"), "错误信息: {}", err.message);
         // 失败后不应留下保险库文件
-        assert!(!easy_keys_lib::vault::vault_exists().unwrap());
+        assert!(!tokey_lib::vault::vault_exists().unwrap());
     });
 }
 
 #[test]
 fn test_unlock_wrong_password_fails() {
     with_vault("unlock-wrong-pwd", |pwd| {
-        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
-        easy_keys_lib::vault::add_record(pwd, sample_record("A", "sk-A")).unwrap();
+        tokey_lib::vault::create_vault(pwd, pwd).unwrap();
+        tokey_lib::vault::add_record(pwd, sample_record("A", "sk-A")).unwrap();
 
-        let err = easy_keys_lib::vault::unlock_vault("wrong-password").unwrap_err();
+        let err = tokey_lib::vault::unlock_vault("wrong-password").unwrap_err();
         assert!(err.message.contains("密码错误"), "错误信息: {}", err.message);
     });
 }
@@ -300,11 +300,11 @@ fn test_unlock_wrong_password_fails() {
 #[test]
 fn test_large_api_key_roundtrip() {
     with_vault("large-key", |pwd| {
-        easy_keys_lib::vault::create_vault(pwd, pwd).unwrap();
+        tokey_lib::vault::create_vault(pwd, pwd).unwrap();
         let big_key = format!("sk-{}", "x".repeat(10 * 1024));
 
-        let rec = easy_keys_lib::vault::add_record(pwd, sample_record("大 key", &big_key)).unwrap();
-        let records = easy_keys_lib::vault::unlock_vault(pwd).unwrap();
+        let rec = tokey_lib::vault::add_record(pwd, sample_record("大 key", &big_key)).unwrap();
+        let records = tokey_lib::vault::unlock_vault(pwd).unwrap();
         assert_eq!(records.records.len(), 1);
         assert_eq!(records.records[0].id, rec.id);
         assert_eq!(records.records[0].api_key, big_key);

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import * as api from "../api";
 import type { ApiKeyRecord, EnvWriteResult } from "../types";
 import { effectiveEnvName } from "../types";
+import { t, useLang } from "../i18n";
 import {
   BoltIcon,
   CheckCircleIcon,
@@ -17,6 +18,7 @@ export default function EnvPage({
 }: {
   records: ApiKeyRecord[];
 }) {
+  useLang();
   const [mode, setMode] = useState<Mode>("persistent");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [shell, setShell] = useState("sh");
@@ -59,7 +61,7 @@ export default function EnvPage({
 
   const run = async () => {
     if (selectedRecords.length === 0) {
-      alert("请至少选择一条密钥");
+      alert(t("请至少选择一条密钥"));
       return;
     }
     setBusy(true);
@@ -74,7 +76,7 @@ export default function EnvPage({
       } else {
         dotenvText = await api.envDotenv(selectedRecords);
         const saved = await api.saveTextFile(
-          "easy-keys.env",
+          "tokey.env",
           dotenvText
         );
         if (saved) {
@@ -82,7 +84,10 @@ export default function EnvPage({
             written: selectedRecords.map((r) => effectiveEnvName(r)),
             skipped: [],
             targetFile: saved,
-            instructions: `已保存到 ${saved}\n\n在项目中使用 dotenv 加载，或直接 source 该文件。`,
+            instructions: t(
+              "已保存到 {path}\n\n在项目中使用 dotenv 加载，或直接 source 该文件。",
+              { path: saved }
+            ),
           };
         } else {
           setBusy(false);
@@ -91,7 +96,7 @@ export default function EnvPage({
       }
       setResult(res);
     } catch (e) {
-      alert(`写入失败：${e}`);
+      alert(t("写入失败：{e}", { e: String(e) }));
     } finally {
       setBusy(false);
     }
@@ -99,49 +104,49 @@ export default function EnvPage({
 
   return (
     <div>
-      <div className="page-title">环境变量</div>
+      <div className="page-title">{t("环境变量")}</div>
       <div className="page-desc">
-        一键把选中的 API Key 写入环境变量。当前检测到 shell 配置：
+        {t("一键把选中的 API Key 写入环境变量。当前检测到 shell 配置：")}
         <code style={{ fontFamily: "var(--mono)", marginLeft: 4 }}>
-          {rcPath || "未知"}
+          {rcPath || t("未知")}
         </code>
       </div>
 
       <div className="card" style={{ maxWidth: 640 }}>
         <div className="field">
-          <label className="field-label">写入方式</label>
+          <label className="field-label">{t("写入方式")}</label>
           <div className="seg">
             <button
               className={mode === "persistent" ? "active" : ""}
               onClick={() => setMode("persistent")}
             >
-              <SaveIcon size={14} /> 持久化（重启生效）
+              <SaveIcon size={14} /> {t("持久化（重启生效）")}
             </button>
             <button
               className={mode === "session" ? "active" : ""}
               onClick={() => setMode("session")}
             >
-              <BoltIcon size={14} /> 仅当前会话
+              <BoltIcon size={14} /> {t("仅当前会话")}
             </button>
             <button
               className={mode === "dotenv" ? "active" : ""}
               onClick={() => setMode("dotenv")}
             >
-              <FileIcon size={14} /> .env 文件
+              <FileIcon size={14} /> {t(".env 文件")}
             </button>
           </div>
           <div className="field-hint">
             {mode === "persistent" &&
-              "写入 shell 配置（~/.zshrc 等）或 Windows 用户环境变量，新终端自动生效"}
+              t("写入 shell 配置（~/.zshrc 等）或 Windows 用户环境变量，新终端自动生效")}
             {mode === "session" &&
-              "生成可 source 的脚本，仅当前终端会话生效，关闭终端即失效"}
-            {mode === "dotenv" && "生成标准 .env 文件，由你自己的工具链加载"}
+              t("生成可 source 的脚本，仅当前终端会话生效，关闭终端即失效")}
+            {mode === "dotenv" && t("生成标准 .env 文件，由你自己的工具链加载")}
           </div>
         </div>
 
         {mode === "session" && (
           <div className="field">
-            <label className="field-label">目标 Shell</label>
+            <label className="field-label">{t("目标 Shell")}</label>
             <select
               className="select"
               value={shell}
@@ -164,20 +169,25 @@ export default function EnvPage({
             margin: "6px 0 10px",
           }}
         >
-          <span className="field-label">选择密钥（已选 {selectedRecords.length}/{records.length}）</span>
+          <span className="field-label">
+            {t("选择密钥（已选 {a}/{b}）", {
+              a: selectedRecords.length,
+              b: records.length,
+            })}
+          </span>
           <span style={{ display: "flex", gap: 10 }}>
             <button className="btn btn-sm btn-ghost" onClick={() => toggleAll(true)}>
-              全选
+              {t("全选")}
             </button>
             <button className="btn btn-sm btn-ghost" onClick={() => toggleAll(false)}>
-              清空
+              {t("清空")}
             </button>
           </span>
         </div>
 
         {records.length === 0 ? (
           <div style={{ color: "var(--text-faint)", fontSize: 13, padding: "12px 0" }}>
-            暂无密钥，请先在「密钥管理」中添加。
+            {t("暂无密钥，请先在「密钥管理」中添加。")}
           </div>
         ) : (
           <div style={{ maxHeight: 260, overflowY: "auto", marginBottom: 8 }}>
@@ -213,12 +223,12 @@ export default function EnvPage({
             disabled={busy || selectedRecords.length === 0}
           >
             {busy
-              ? "写入中…"
+              ? t("写入中…")
               : mode === "persistent"
-              ? "写入 shell 配置"
+              ? t("写入 shell 配置")
               : mode === "session"
-              ? "生成会话脚本"
-              : "导出 .env 文件"}
+              ? t("生成会话脚本")
+              : t("导出 .env 文件")}
           </button>
         </div>
       </div>
@@ -226,7 +236,7 @@ export default function EnvPage({
       {result && (
         <div className="card" style={{ maxWidth: 640, marginTop: 16 }}>
           <div className="field-label" style={{ marginBottom: 8 }}>
-            写入结果
+            {t("写入结果")}
           </div>
           {result.written.length > 0 && (
             <div style={{ marginBottom: 10 }}>
@@ -265,7 +275,7 @@ export default function EnvPage({
                 wordBreak: "break-all",
               }}
             >
-              文件：{result.targetFile}
+              {t("文件：{path}", { path: result.targetFile })}
             </div>
           )}
           {result.instructions && (
@@ -297,9 +307,9 @@ export default function EnvPage({
           lineHeight: 1.8,
         }}
       >
-        安全说明：持久化写入会把密钥以明文形式追加到 shell 配置文件
-        （这些文件权限通常仅当前用户可读）。如果你更在意静态存储安全，
-        推荐使用「仅当前会话」模式或 .env 文件并在使用后删除。
+        {t(
+          "安全说明：持久化写入会把密钥以明文形式追加到 shell 配置文件（这些文件权限通常仅当前用户可读）。如果你更在意静态存储安全，推荐使用「仅当前会话」模式或 .env 文件并在使用后删除。"
+        )}
       </div>
     </div>
   );

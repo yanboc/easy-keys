@@ -5,7 +5,7 @@ const PASSWORD = 'e2e-test-password';
 const KEY_NAME = 'E2E 测试密钥';
 const KEY_VALUE = 'sk-e2e-abcdef1234567890';
 
-describe('easy-keys 核心流程', () => {
+describe('tokey 核心流程', () => {
   before(async () => {
     // 未安装 @wdio/tauri-plugin（JS 侧）时，service 的自动窗口聚焦检查会在每条命令前
     // 空等 5s；显式切换一次窗口后 service 会跳过该检查（视为用户已手动指定窗口）。
@@ -14,6 +14,13 @@ describe('easy-keys 核心流程', () => {
     } catch {
       /* 忽略：无 tauri-plugin-wdio 时仅用于抑制自动聚焦 */
     }
+    // CI（ubuntu）系统语言为英文，应用会默认进英文界面；
+    // 钉住中文后刷新页面，使中文断言与运行环境语言无关
+    await browser.execute(() => {
+      localStorage.setItem('tokey-lang', 'zh');
+      localStorage.setItem('tokey-theme', 'light');
+    });
+    await browser.refresh();
   });
 
   it('创建保险库（密码 ≥8 位）并进入密钥管理页', async () => {

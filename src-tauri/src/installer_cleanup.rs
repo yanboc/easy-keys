@@ -1,7 +1,8 @@
 //! 旧版本安装包自动清理（installer-cleanup）
 //!
-//! 应用启动时扫描 macOS `~/Downloads` 中形如 `easy-keys_<版本号>_*.dmg`
-//! 的旧版本安装包，移入废纸篓（可恢复，非直接删除）。
+//! 应用启动时扫描 macOS `~/Downloads` 中形如 `tokey_<版本号>_*.dmg`
+//! （以及改名前遗留的 `easy-keys_<版本号>_*.dmg`）的旧版本安装包，
+//! 移入废纸篓（可恢复，非直接删除）。
 //!
 //! 设计：文件名解析 / 版本比较 / 目标筛选均为纯函数，文件扫描接受目录参数，
 //! 测试不触碰真实 ~/Downloads。
@@ -38,13 +39,20 @@ pub fn current_version() -> Version {
     Version::parse(env!("CARGO_PKG_VERSION")).expect("CARGO_PKG_VERSION 必须是 x.y.z 格式")
 }
 
+/// 安装包文件名前缀：当前为 `tokey_`，`easy-keys_` 是改名前（v0.4.x 及更早）的遗留，
+/// 仍需识别以便老用户的旧安装包能被清理。
+const INSTALLER_PREFIXES: [&str; 2] = ["tokey_", "easy-keys_"];
+
 /// 从文件名解析安装包版本号。
 ///
-/// 只认 `easy-keys_<x.y.z>_<任意后缀>.dmg`（如 `easy-keys_0.2.0_aarch64.dmg`），
-/// 其余一律返回 None。
+/// 只认 `tokey_<x.y.z>_<任意后缀>.dmg` / `easy-keys_<x.y.z>_<任意后缀>.dmg`
+///（如 `tokey_0.4.2_aarch64.dmg`），其余一律返回 None。
 pub fn parse_installer_version(file_name: &str) -> Option<Version> {
-    let stem = file_name.strip_prefix("easy-keys_")?.strip_suffix(".dmg")?;
-    // stem 形如 "0.2.0_aarch64"，版本号在第一个 '_' 之前
+    let stem = INSTALLER_PREFIXES
+        .iter()
+        .find_map(|p| file_name.strip_prefix(p))?
+        .strip_suffix(".dmg")?;
+    // stem 形如 "0.4.2_aarch64"，版本号在第一个 '_' 之前
     let version_part = stem.split('_').next()?;
     Version::parse(version_part)
 }
@@ -135,12 +143,17 @@ mod tests {
     #[test]
     fn parse_valid_installer_names() {
         assert_eq!(
-            parse_installer_version("easy-keys_0.2.0_aarch64.dmg"),
-            Some(Version(0, 2, 0))
+            parse_installer_version("tokey_0.4.2_aarch64.dmg"),
+            Some(Version(0, 4, 2))
         );
         assert_eq!(
-            parse_installer_version("easy-keys_0.10.0_x64.dmg"),
+            parse_installer_version("tokey_0.10.0_x64.dmg"),
             Some(Version(0, 10, 0))
+        );
+        // 改名前的旧前缀也要识别（老用户的遗留安装包）
+        assert_eq!(
+            parse_installer_version("easy-keys_0.2.0_aarch64.dmg"),
+            Some(Version(0, 2, 0))
         );
         assert_eq!(
             parse_installer_version("easy-keys_1.2.3_universal-apple-darwin.dmg"),
@@ -150,19 +163,20 @@ mod tests {
 
     #[test]
     fn parse_rejects_non_installer_names() {
-        // 非 easy-keys 文件
+        // 非本应用文件
         assert_eq!(parse_installer_version("other-app_0.1.0_aarch64.dmg"), None);
+        assert_eq!(parse_installer_version("tokey.dmg"), None);
         assert_eq!(parse_installer_version("easy-keys.dmg"), None);
         assert_eq!(parse_installer_version("readme.txt"), None);
         // 扩展名不对
-        assert_eq!(parse_installer_version("easy-keys_0.2.0_aarch64.zip"), None);
-        assert_eq!(parse_installer_version("easy-keys_0.2.0_aarch64.DMG"), None);
+        assert_eq!(parse_installer_version("tokey_0.4.2_aarch64.zip"), None);
+        assert_eq!(parse_installer_version("tokey_0.4.2_aarch64.DMG"), None);
         // 版本号缺失 / 不合法
-        assert_eq!(parse_installer_version("easy-keys__aarch64.dmg"), None);
-        assert_eq!(parse_installer_version("easy-keys_0.2_aarch64.dmg"), None);
-        assert_eq!(parse_installer_version("easy-keys_0.2.0.1_aarch64.dmg"), None);
-        assert_eq!(parse_installer_version("easy-keys_v0.2.0_aarch64.dmg"), None);
-        assert_eq!(parse_installer_version("easy-keys_aarch64.dmg"), None);
+        assert_eq!(parse_installer_version("tokey__aarch64.dmg"), None);
+        assert_eq!(parse_installer_version("tokey_0.5_aarch64.dmg"), None);
+        assert_eq!(parse_installer_version("tokey_0.4.2.1_aarch64.dmg"), None);
+        assert_eq!(parse_installer_version("tokey_v0.4.2_aarch64.dmg"), None);
+        assert_eq!(parse_installer_version("tokey_aarch64.dmg"), None);
     }
 
     #[test]
@@ -187,30 +201,32 @@ mod tests {
     }
 
     #[test]
-    fn filter_selects_only_outdated_easy_keys_dmgs() {
-        let dir = std::env::temp_dir().join(format!("easy-keys-cleanup-test-{}", std::process::id()));
+    fn filter_selects_only_outdated_installer_dmgs() {
+        let dir = std::env::temp_dir().join(format!("tokey-cleanup-test-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
 
         let files = [
-            "easy-keys_0.1.0_aarch64.dmg",  // 旧版 → 选中
-            "easy-keys_0.2.0_aarch64.dmg",  // 旧版 → 选中
-            "easy-keys_0.3.0_aarch64.dmg",  // 当前版本 → 不动
-            "easy-keys_0.9.9_aarch64.dmg",  // 比当前新 → 不动
-            "easy-keys_0.10.0_aarch64.dmg", // 比当前新 → 不动（0.10 > 0.3 的坑）
-            "easy-keys_0.2.0_aarch64.zip",  // 非 dmg → 不动
-            "other-tool_0.1.0.dmg",         // 别的应用 → 不动
-            "random.dmg",                   // 无名 dmg → 不动
-            "笔记.txt",                     // 用户文件 → 不动
+            "tokey_0.4.0_aarch64.dmg",        // 旧版 → 选中
+            "tokey_0.4.2_aarch64.dmg",        // 当前版本 → 不动
+            "tokey_0.9.9_aarch64.dmg",        // 比当前新 → 不动
+            "tokey_0.10.0_aarch64.dmg",       // 比当前新 → 不动（0.10 > 0.4 的坑）
+            "easy-keys_0.1.0_aarch64.dmg",    // 改名前旧版 → 选中
+            "easy-keys_0.4.1_aarch64.dmg",    // 改名前旧版 → 选中
+            "easy-keys_0.9.9_aarch64.dmg",    // 改名前但比当前新 → 不动
+            "tokey_0.4.0_aarch64.zip",        // 非 dmg → 不动
+            "other-tool_0.1.0.dmg",           // 别的应用 → 不动
+            "random.dmg",                     // 无名 dmg → 不动
+            "笔记.txt",                       // 用户文件 → 不动
         ];
         for f in files {
             fs::write(dir.join(f), b"fake").unwrap();
         }
         // 子目录里的同名文件绝不能被碰（不递归）
         fs::create_dir_all(dir.join("subdir")).unwrap();
-        fs::write(dir.join("subdir").join("easy-keys_0.1.0_aarch64.dmg"), b"fake").unwrap();
+        fs::write(dir.join("subdir").join("tokey_0.1.0_aarch64.dmg"), b"fake").unwrap();
 
-        let current = Version(0, 3, 0);
+        let current = Version(0, 4, 2);
         let mut found = find_outdated_installers(&dir, current).unwrap();
         found.sort();
         let names: Vec<_> = found
@@ -221,7 +237,8 @@ mod tests {
             names,
             vec![
                 "easy-keys_0.1.0_aarch64.dmg".to_string(),
-                "easy-keys_0.2.0_aarch64.dmg".to_string()
+                "easy-keys_0.4.1_aarch64.dmg".to_string(),
+                "tokey_0.4.0_aarch64.dmg".to_string()
             ]
         );
 
@@ -230,7 +247,7 @@ mod tests {
 
     #[test]
     fn missing_dir_is_noop() {
-        let dir = std::env::temp_dir().join(format!("easy-keys-no-such-dir-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("tokey-no-such-dir-{}", std::process::id()));
         let found = find_outdated_installers(&dir, Version(0, 3, 0)).unwrap();
         assert!(found.is_empty());
     }
