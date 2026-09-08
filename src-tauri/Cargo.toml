@@ -1,6 +1,6 @@
 [package]
 name = "tokey"
-version = "0.4.4"
+version = "0.4.5"
 description = "Fully-local AI API Key manager: encrypted vault, speed test, env var injection"
 authors = ["tokey"]
 edition = "2021"
@@ -33,7 +33,6 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 base64 = "0.22"
 thiserror = "2"
 futures-util = "0.3"
-trash = "5"
 
 # E2E 专用：内嵌 WebDriver server，仅 e2e feature 下编译，release 构建严禁包含
 tauri-plugin-wdio-webdriver = { version = "1", optional = true }

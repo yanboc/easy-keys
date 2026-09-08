@@ -4414,7 +4414,7 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokey"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "aes-gcm",
  "argon2",
@@ -4439,7 +4439,6 @@ dependencies = [
  "tauri-plugin-wdio-webdriver",
  "thiserror 2.0.20",
  "tokio",
- "trash",
  "uuid",
  "windows 0.56.0",
  "zeroize",
@@ -4693,24 +4692,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "trash"
-version = "5.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08676401d031c4a43b7022d90e1748ef4624fabb68ac2abf0cb5812f8c02d78e"
-dependencies = [
- "chrono",
- "libc",
- "log",
- "objc2",
- "objc2-foundation",
- "once_cell",
- "percent-encoding",
- "scopeguard",
- "urlencoding",
- "windows 0.56.0",
-]
-
-[[package]]
 name = "tray-icon"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4842,12 +4823,6 @@ dependencies = [
  "serde",
  "serde_derive",
 ]
-
-[[package]]
-name = "urlencoding"
-version = "2.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "urlpattern"

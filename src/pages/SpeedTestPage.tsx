@@ -51,51 +51,53 @@ export default function SpeedTestPage({
         )}
       </div>
 
-      <div className="toolbar">
-        <div className="toolbar-right" style={{ gap: 10, alignItems: "center" }}>
-          <label className="field-hint" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {t("超时(ms)")}
-            <input
-              className="input"
-              type="number"
-              value={timeoutMs}
-              min={1000}
-              max={60000}
-              step={1000}
-              onChange={(e) => setTimeoutMs(Number(e.target.value))}
-              style={{ width: 100, padding: "5px 8px" }}
-            />
-          </label>
-          <button className="btn btn-primary" onClick={run} disabled={running}>
-            {running ? (
-              <>
-                <span className="spinner" /> {t("测速中…")}
-              </>
-            ) : (
-              <>
-                <BoltIcon size={14} /> {t("开始测速")}
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {results.length === 0 ? (
-        <div className="card">
-          <div className="empty-state">
-            <div className="big-icon">
-              <BoltIcon size={40} />
-            </div>
-            <div>{t("尚未测速")}</div>
-            <div style={{ color: "var(--text-faint)", marginTop: 6 }}>
-              {t("点击「开始测速」对全部 {n} 条密钥进行并发检测", {
-                n: records.length,
-              })}
-            </div>
+      {/* 内容列宽与导出/设置页一致（560），不再铺满 */}
+      <div style={{ maxWidth: 560 }}>
+        <div className="toolbar">
+          <div className="toolbar-right" style={{ gap: 10, alignItems: "center" }}>
+            <label className="field-hint" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {t("超时(ms)")}
+              <input
+                className="input"
+                type="number"
+                value={timeoutMs}
+                min={1000}
+                max={60000}
+                step={1000}
+                onChange={(e) => setTimeoutMs(Number(e.target.value))}
+                style={{ width: 100, padding: "5px 8px" }}
+              />
+            </label>
+            <button className="btn btn-primary" onClick={run} disabled={running}>
+              {running ? (
+                <>
+                  <span className="spinner" /> {t("测速中…")}
+                </>
+              ) : (
+                <>
+                  <BoltIcon size={14} /> {t("开始测速")}
+                </>
+              )}
+            </button>
           </div>
         </div>
-      ) : (
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+
+        {results.length === 0 ? (
+          <div className="card">
+            <div className="empty-state">
+              <div className="big-icon">
+                <BoltIcon size={40} />
+              </div>
+              <div>{t("尚未测速")}</div>
+              <div style={{ color: "var(--text-faint)", marginTop: 6 }}>
+                {t("点击「开始测速」对全部 {n} 条密钥进行并发检测", {
+                  n: records.length,
+                })}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           <div
             style={{
               padding: "10px 14px",
@@ -170,18 +172,19 @@ export default function SpeedTestPage({
         </div>
       )}
 
-      <div
-        className="card"
-        style={{
-          marginTop: 16,
-          fontSize: 12,
-          color: "var(--text-faint)",
-          lineHeight: 1.8,
-        }}
-      >
-        {t(
-          "安全说明：测速请求由 Rust 后端直连你配置的端点发出，已禁用自动重定向（防止密钥被转发到第三方）；应用自身不含任何遥测、更新检查或第三方连接。"
-        )}
+        <div
+          className="card"
+          style={{
+            marginTop: 16,
+            fontSize: 12,
+            color: "var(--text-faint)",
+            lineHeight: 1.8,
+          }}
+        >
+          {t(
+            "安全说明：测速请求由 Rust 后端直连你配置的端点发出，已禁用自动重定向（防止密钥被转发到第三方）；应用自身不含任何遥测、更新检查或第三方连接。"
+          )}
+        </div>
       </div>
     </div>
   );

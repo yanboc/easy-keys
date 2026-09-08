@@ -174,29 +174,31 @@ export default function KeyListPage({
         })}
       </div>
 
-      <div className="toolbar">
-        <div />
-        <div className="toolbar-right">
-          <button className="btn btn-primary" onClick={() => setCreating(true)}>
-            <PlusIcon size={14} /> {t("新增密钥")}
-          </button>
-        </div>
-      </div>
-
-      {records.length === 0 ? (
-        <div className="card">
-          <div className="empty-state">
-            <div className="big-icon">
-              <KeyIcon size={40} />
-            </div>
-            <div>{t("还没有任何密钥")}</div>
-            <div style={{ color: "var(--text-faint)", marginTop: 6 }}>
-              {t("点击「新增密钥」开始管理你的第一个 API Key")}
-            </div>
+      {/* 内容列宽与导出/设置页一致（560），表格内容变少后不再铺满 */}
+      <div style={{ maxWidth: 560 }}>
+        <div className="toolbar">
+          <div />
+          <div className="toolbar-right">
+            <button className="btn btn-primary" onClick={() => setCreating(true)}>
+              <PlusIcon size={14} /> {t("新增密钥")}
+            </button>
           </div>
         </div>
-      ) : (
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+
+        {records.length === 0 ? (
+          <div className="card">
+            <div className="empty-state">
+              <div className="big-icon">
+                <KeyIcon size={40} />
+              </div>
+              <div>{t("还没有任何密钥")}</div>
+              <div style={{ color: "var(--text-faint)", marginTop: 6 }}>
+                {t("点击「新增密钥」开始管理你的第一个 API Key")}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           <table className="table">
             <thead>
               <tr>
@@ -303,8 +305,9 @@ export default function KeyListPage({
               ))}
             </tbody>
           </table>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {(creating || editing) && (
         <KeyFormModal

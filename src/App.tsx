@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ComponentType } from "react";
 import * as api from "./api";
 import type { ApiKeyRecord, BiometricStatus } from "./types";
-import appIconUrl from "./assets/app-icon.png";
 import {
   BoltIcon,
   BoxIcon,
@@ -11,7 +10,6 @@ import {
   GitHubIcon,
   GlobeIcon,
   KeyIcon,
-  LockIcon,
   MoonIcon,
   SunIcon,
   type IconProps,
@@ -29,7 +27,7 @@ type VaultState = "checking" | "need-create" | "locked" | "unlocked";
 
 const GITHUB_URL = "https://github.com/yanboc/easy-keys";
 
-// 锁屏用小窗：刚好包裹 LOGO + 一个输入控件；解锁后恢复主界面尺寸
+// 解锁页用小窗：刚好包裹一个输入控件；解锁后恢复主界面尺寸
 const LOCK_WIN = { w: 360, h: 250, minW: 320, minH: 220 };
 const MAIN_WIN = { w: 960, h: 590, minW: 760, minH: 520 };
 
@@ -48,13 +46,10 @@ const LANG_OPTIONS: { id: Lang; label: string }[] = [
 
 function LockScreen({
   mode,
-  autoTrigger,
   onUnlock,
   onBiometricUnlock,
 }: {
   mode: "create" | "unlock";
-  /** 进入锁屏时是否自动弹一次系统验证（启动时为 true；用户主动锁定后退后台，不弹） */
-  autoTrigger: boolean;
   onUnlock: (password: string) => void;
   onBiometricUnlock: (records: ApiKeyRecord[]) => void;
 }) {
@@ -68,13 +63,10 @@ function LockScreen({
   // 生物识别失败/取消后，把生物识别按钮替换为主密码输入框
   const [bioFailed, setBioFailed] = useState(false);
   const autoTriggered = useRef(false);
-  // 在途守卫 + 冷却起点（按尝试「结束」计时）：系统验证弹窗会抢占焦点，
-  // 弹窗出现/关闭都会触发焦点事件，没有这两道闸会重复弹窗、要按多次指纹
+  // 在途守卫：同一时刻只允许一次系统验证
   const bioInFlight = useRef(false);
-  const lastBioSettle = useRef(0);
 
-  const biometricAvailable = !!(biometric?.available && biometric?.enabled);
-  const biometricReady = biometricAvailable && !bioFailed;
+  const biometricReady = !!(biometric?.available && biometric?.enabled) && !bioFailed;
 
   const runBiometricUnlock = useCallback(async () => {
     if (bioInFlight.current) return;
@@ -90,14 +82,9 @@ function LockScreen({
       setBioFailed(true);
     } finally {
       bioInFlight.current = false;
-      lastBioSettle.current = Date.now();
       setBioBusy(false);
     }
   }, [onBiometricUnlock]);
-
-  // 焦点监听期间需要读到最新的可用性
-  const biometricAvailableRef = useRef(false);
-  biometricAvailableRef.current = biometricAvailable;
 
   useEffect(() => {
     if (mode !== "unlock") return;
@@ -107,9 +94,8 @@ function LockScreen({
       .then((s) => {
         if (cancelled) return;
         setBiometric(s);
-        // 启动进入锁屏时自动触发一次系统验证（仅挂载后一次）；
-        // 用户主动锁定后退至后台，不触发，等下次聚焦时再弹
-        if (autoTrigger && s.available && s.enabled && !autoTriggered.current) {
+        // 进入解锁页自动触发一次系统验证（仅挂载后一次）
+        if (s.available && s.enabled && !autoTriggered.current) {
           autoTriggered.current = true;
           runBiometricUnlock();
         }
@@ -117,27 +103,6 @@ function LockScreen({
       .catch(() => {});
     return () => {
       cancelled = true;
-    };
-  }, [mode, autoTrigger, runBiometricUnlock]);
-
-  // 锁定状态下，焦点每次切回本应用都自动触发一次系统验证；
-  // 跳过在途验证 + 自上次结束冷却 5 秒（取消验证后焦点回落会立刻再触发）
-  useEffect(() => {
-    if (mode !== "unlock") return;
-    let unlisten: (() => void) | undefined;
-    api
-      .onWindowFocus((focused) => {
-        if (!focused || !biometricAvailableRef.current) return;
-        if (bioInFlight.current) return;
-        if (Date.now() - lastBioSettle.current < 5000) return;
-        runBiometricUnlock();
-      })
-      .then((u) => {
-        unlisten = u;
-      })
-      .catch(() => {});
-    return () => {
-      unlisten?.();
     };
   }, [mode, runBiometricUnlock]);
 
@@ -166,13 +131,6 @@ function LockScreen({
 
   return (
     <div className="lock-screen">
-      <img
-        src={appIconUrl}
-        alt="Tokey"
-        width={56}
-        height={56}
-        draggable={false}
-      />
       <form
         className="lock-form"
         onSubmit={(e) => {
@@ -248,8 +206,6 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [page, setPage] = useState<Page>("keys");
   const [langMenuOpen, setLangMenuOpen] = useState(false);
-  // 用户主动锁定后退至后台：本次锁屏不自动弹生物识别，等下次聚焦触发
-  const [justLocked, setJustLocked] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -260,19 +216,8 @@ export default function App() {
         setVaultState("need-create");
         return;
       }
-      if (!exists) {
-        setVaultState("need-create");
-        return;
-      }
-      // 关窗重开 / 前端重载：Rust 侧会话仍存活则直接恢复，不回到锁屏；
-      // 显式锁定与进程退出会清除会话，resume 失败才回退锁屏
-      try {
-        const rs = await api.vaultResume();
-        setRecords(rs);
-        setVaultState("unlocked");
-      } catch {
-        setVaultState("locked");
-      }
+      // 关窗即退出进程，不存在可恢复的会话：每次启动都必须重新解锁
+      setVaultState(exists ? "locked" : "need-create");
     })();
   }, []);
 
@@ -292,7 +237,6 @@ export default function App() {
       .then((rs) => {
         setPassword(pwd);
         setRecords(rs);
-        setJustLocked(false);
         setVaultState("unlocked");
       })
       .catch((e) => {
@@ -304,20 +248,7 @@ export default function App() {
   const handleBiometricUnlock = useCallback((rs: ApiKeyRecord[]) => {
     setPassword("");
     setRecords(rs);
-    setJustLocked(false);
     setVaultState("unlocked");
-  }, []);
-
-  // 锁定：清除会话（fire-and-forget）、回锁屏小窗、退至后台，
-  // 下次聚焦时由焦点监听自动触发生物识别
-  const handleLock = useCallback(() => {
-    api.vaultLock().catch(() => {});
-    api.appHide().catch(() => {});
-    setPassword("");
-    setRecords([]);
-    setPage("keys");
-    setJustLocked(true);
-    setVaultState("locked");
   }, []);
 
   const refreshRecords = useCallback(
@@ -348,7 +279,6 @@ export default function App() {
     return (
       <LockScreen
         mode={vaultState === "need-create" ? "create" : "unlock"}
-        autoTrigger={!justLocked}
         onUnlock={handleUnlock}
         onBiometricUnlock={handleBiometricUnlock}
       />
@@ -420,13 +350,6 @@ export default function App() {
               </>
             )}
           </div>
-          <button
-            className="footer-btn"
-            title={t("锁定应用")}
-            onClick={handleLock}
-          >
-            <LockIcon size={14} />
-          </button>
         </div>
       </aside>
       <main className="main">

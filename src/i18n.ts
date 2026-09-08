@@ -35,7 +35,6 @@ const DICT: Record<string, string> = {
   "切换为深色模式": "Switch to dark mode",
   "切换为浅色模式": "Switch to light mode",
   "界面语言": "Language",
-  "锁定应用": "Lock App",
 
   // ---- 密钥列表 ----
   "共 {n} 条密钥 · 全部加密存储在本地，绝不外传":

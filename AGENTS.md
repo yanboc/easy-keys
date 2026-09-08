@@ -24,7 +24,7 @@ npm run tauri dev              # 本地开发窗口
 
 本项目本机使用 OpenSpec 管理规格，现有行为的权威描述在 `openspec/specs/`（**仅本机维护，不入库**，已被 .gitignore 排除）：
 
-- `vault-crypto` / `key-management` / `speedtest` / `export-import` / `env-vars` / `biometric-unlock` / `installer-cleanup` / `ui-style` / `docs-conventions`
+- `vault-crypto` / `key-management` / `speedtest` / `export-import` / `env-vars` / `biometric-unlock` / `ui-style` / `docs-conventions`
 
 工作流约定：
 
@@ -54,7 +54,7 @@ npm run tauri dev              # 本地开发窗口
 ## 代码结构
 
 - `src/`：React 前端（`api.ts` 是唯一的 Tauri invoke 封装层，前端不直接 import `@tauri-apps/api`）
-- `src-tauri/src/`：Rust 后端（crypto / vault / env / export_import / speedtest / installer_cleanup / biometric / models / error / lib）
+- `src-tauri/src/`：Rust 后端（crypto / vault / env / export_import / speedtest / biometric / models / error / lib）
 - `openspec/`：规格与变更提案
 - `scripts/run.sh`：一键自回归入口
 - `scripts/make-dmg.sh`：CI macOS dmg 打包（内嵌已验证的 DS_Store 布局 + ad-hoc 深签名；tauri 自带 dmg bundler 在无头 CI 上布局会丢失）

@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-09-09
+
+### Removed
+
+- 移除「锁定应用」功能及全部锁定相关逻辑（锁定按钮、锁定退后台、焦点触发验证、会话恢复）；macOS 关窗改为退出进程，重开需重新输入主密码或完成生物识别
+- 移除旧版安装包自动清理（启动时扫描下载目录移入废纸篓）：该功能会触发 macOS「访问下载文件夹」授权框；应用不再访问 ~/Downloads
+
+### Changed
+
+- 密钥管理与连通性测速页内容列收窄至 560px，与导出/设置页一致，不再随窗口铺满
+- 解锁页去掉 LOGO，仅保留一个输入控件；启动进入解锁页自动触发一次系统验证（取消后回退主密码输入，不再自动重弹）
+
 ## [0.4.4] - 2026-09-08
 
 ### Fixed
@@ -125,7 +137,8 @@
 - 应用零联网：无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击测速
 - Tauri capabilities 最小权限：仅开放文件对话框、剪贴板读写与窗口尺寸调整
 
-[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.4.4...HEAD
+[Unreleased]: https://github.com/yanboc/easy-keys/compare/v0.4.5...HEAD
+[0.4.5]: https://github.com/yanboc/easy-keys/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/yanboc/easy-keys/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/yanboc/easy-keys/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/yanboc/easy-keys/compare/v0.4.1...v0.4.2

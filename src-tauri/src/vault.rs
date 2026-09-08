@@ -11,10 +11,10 @@ use zeroize::Zeroize;
 use zeroize::Zeroizing;
 
 /// 生物识别解锁后的会话主密码：仅存于 Rust 内存（Zeroizing），
-/// 锁定时清除，进程退出即消失；不出 Rust 层、不落盘。
+/// 进程退出即消失（关窗即退出应用）；不出 Rust 层、不落盘。
 static SESSION_PASSWORD: Mutex<Option<Zeroizing<String>>> = Mutex::new(None);
 
-/// 建立会话（生物识别解锁成功后调用）
+/// 建立会话（解锁成功后调用，供后续写操作回免密使用）
 pub fn set_session_password(password: Zeroizing<String>) {
     if let Ok(mut guard) = SESSION_PASSWORD.lock() {
         *guard = Some(password);
@@ -24,13 +24,6 @@ pub fn set_session_password(password: Zeroizing<String>) {
 /// 取会话主密码（无会话时 None）
 pub fn session_password() -> Option<Zeroizing<String>> {
     SESSION_PASSWORD.lock().ok().and_then(|g| g.clone())
-}
-
-/// 锁定：清除会话主密码
-pub fn clear_session_password() {
-    if let Ok(mut guard) = SESSION_PASSWORD.lock() {
-        *guard = None;
-    }
 }
 
 /// 主密码变更后同步会话（仅当会话存在）

@@ -9,7 +9,7 @@ import type {
   SpeedTestResult,
 } from "./types";
 
-// ============ 窗口（锁屏小窗 ↔ 主界面） ============
+// ============ 窗口（解锁页小窗 ↔ 主界面） ============
 
 /** 调整最小尺寸 → 设定尺寸 → 居中（顺序保证双向切换都不被 minSize 钳制） */
 export async function resizeWindow(
@@ -24,18 +24,6 @@ export async function resizeWindow(
   await win.center();
 }
 
-/** 监听窗口焦点变化，resolve 出取消监听函数 */
-export function onWindowFocus(
-  cb: (focused: boolean) => void
-): Promise<() => void> {
-  return getCurrentWindow().onFocusChanged(({ payload }) => cb(payload));
-}
-
-/** 锁定后退至后台（macOS 原生 hide，焦点交还之前的应用） */
-export function appHide(): Promise<void> {
-  return invoke("app_hide_cmd");
-}
-
 // ============ 保险库 ============
 
 export function vaultExists(): Promise<boolean> {
@@ -48,11 +36,6 @@ export function vaultCreate(password: string, confirm: string): Promise<void> {
 
 export function vaultUnlock(password: string): Promise<ApiKeyRecord[]> {
   return invoke<ApiKeyRecord[]>("vault_unlock_cmd", { password });
-}
-
-/** 用 Rust 侧仍存活的会话恢复解锁（关窗重开 / 前端重载）；失败则回退锁屏 */
-export function vaultResume(): Promise<ApiKeyRecord[]> {
-  return invoke<ApiKeyRecord[]>("vault_resume_cmd");
 }
 
 export function vaultAdd(
@@ -82,10 +65,6 @@ export function vaultChangePassword(
 
 export function getDefaultProviders(): Promise<ProviderTemplate[]> {
   return invoke<ProviderTemplate[]>("get_default_providers_cmd");
-}
-
-export function vaultLock(): Promise<void> {
-  return invoke("vault_lock_cmd");
 }
 
 // ============ 外部链接 ============

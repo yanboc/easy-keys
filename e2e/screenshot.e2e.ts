@@ -66,7 +66,7 @@ describe('UI 视觉截图（无断言）', () => {
       localStorage.setItem('tokey-theme', 'light');
     });
     await browser.refresh();
-    // 若起始为锁屏/创建页，先截一张（含应用图标）再解锁；
+    // 若起始为解锁/创建页，先截一张再解锁；
     // refresh 后等一拍让前端挂载，否则误判为已解锁
     await browser.pause(800);
     if (await (await $('input[type="password"]')).isExisting()) {
