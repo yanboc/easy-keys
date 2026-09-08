@@ -1,5 +1,5 @@
 // 真机 E2E：创建保险库 → 解锁进入 → 新增密钥 → 列表遮蔽 → 显示切换
-// 数据目录由 wdio.conf.ts onPrepare 注入 EASY_KEYS_DATA_DIR（临时目录），不碰真实保险库。
+// 数据目录由 wdio.conf.ts onPrepare 注入 TOKEY_DATA_DIR（临时目录），不碰真实保险库。
 
 const PASSWORD = 'e2e-test-password';
 const KEY_NAME = 'E2E 测试密钥';

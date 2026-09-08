@@ -70,7 +70,7 @@ describe("EnvPage", () => {
       written: ["OPENAI_API_KEY"],
       skipped: [],
       targetFile: null,
-      instructions: "source /tmp/easy-keys.sh",
+      instructions: "source /tmp/tokey.sh",
     });
     render(<EnvPage records={records} />);
 
@@ -84,7 +84,7 @@ describe("EnvPage", () => {
 
     expect(api.envSessionScript).toHaveBeenCalledWith([records[0]], "sh");
     expect(
-      await screen.findByText("source /tmp/easy-keys.sh")
+      await screen.findByText("source /tmp/tokey.sh")
     ).toBeInTheDocument();
   });
 });

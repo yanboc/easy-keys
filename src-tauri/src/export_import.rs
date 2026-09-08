@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
 
 /// .ekey 可迁移文件格式头
-pub const EKEY_MAGIC: &str = "EASYKEYS-EKEY";
+pub const EKEY_MAGIC: &str = "TOKEY-EKEY";
 pub const EKEY_VERSION: u32 = 1;
 
 /// 加密导出文件结构
@@ -97,7 +97,7 @@ pub fn encrypted_export(records: &[ApiKeyRecord], password: &str) -> AppResult<S
 pub fn encrypted_import(content: &str, password: &str) -> AppResult<Vec<ApiKeyRecord>> {
     let ekey: EkeyFile = serde_json::from_str(content)?;
     if ekey.magic != EKEY_MAGIC {
-        return Err(AppError::new("不是有效的 easy-keys 加密导出文件"));
+        return Err(AppError::new("不是有效的 tokey 加密导出文件"));
     }
     let salt = B64.decode(&ekey.kdf_salt).map_err(|_| AppError::new("文件 salt 损坏"))?;
     let nonce_bytes = B64.decode(&ekey.nonce).map_err(|_| AppError::new("文件 nonce 损坏"))?;

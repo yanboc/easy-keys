@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-// 服务选项对象：onPrepare 中创建临时数据目录后，往 env 里注入 EASY_KEYS_DATA_DIR，
-// 保证 E2E 启动的应用绝不触碰真实保险库 ~/Library/Application Support/easy-keys/
+// 服务选项对象：onPrepare 中创建临时数据目录后，往 env 里注入 TOKEY_DATA_DIR，
+// 保证 E2E 启动的应用绝不触碰真实保险库 ~/Library/Application Support/tokey/
 const tauriServiceOptions = {
   driverProvider: 'embedded', // WebDriver server 内嵌在应用进程（tauri-plugin-wdio-webdriver，e2e feature）
   env: {} as Record<string, string>,
@@ -38,7 +38,7 @@ export const config = {
   ],
   onPrepare() {
     e2eDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tokey-e2e-'));
-    tauriServiceOptions.env.EASY_KEYS_DATA_DIR = e2eDataDir;
+    tauriServiceOptions.env.TOKEY_DATA_DIR = e2eDataDir;
     // eslint-disable-next-line no-console
     console.log(`[e2e] 临时数据目录: ${e2eDataDir}`);
   },

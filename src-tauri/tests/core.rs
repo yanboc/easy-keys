@@ -1,9 +1,9 @@
-//! easy-keys 核心逻辑集成测试（独立 tests/ 目录）
+//! tokey 核心逻辑集成测试（独立 tests/ 目录）
 //!
 //! 覆盖：加密保险库往返、错误密码、CRUD、改密码、批量导入、边界情况。
 //!
 //! 隔离策略：所有需要文件系统的测试通过全局 Mutex 串行执行，
-//! 每个测试在锁内设置独立的 EASY_KEYS_DATA_DIR 临时目录，互不干扰。
+//! 每个测试在锁内设置独立的 TOKEY_DATA_DIR 临时目录，互不干扰。
 
 use tokey_lib::crypto;
 use tokey_lib::models::{ApiKeyRecord, RecordsFile, VaultFile};
@@ -20,7 +20,7 @@ fn fs_lock() -> &'static Mutex<()> {
 /// 生成独立临时目录（带 tag 保证唯一）
 fn make_temp_dir(tag: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!(
-        "easy-keys-test-{tag}-{}",
+        "tokey-test-{tag}-{}",
         std::process::id()
     ));
     let _ = fs::remove_dir_all(&dir);

@@ -2,9 +2,7 @@
 
 ## 项目简介
 
-Tokey（原名 easy-keys，v0.4.2 更名）：完全本地的 AI API Key 管理工具。Tauri 2（Rust 后端）+ React 18 + Vite + TypeScript（前端）。应用自身**零联网**——无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击「测速」。
-
-更名后为兼容老用户数据**有意保持不变**的内部标识：bundle identifier `com.easykeys.app`、数据目录 `easy-keys/`、Keychain service、保险库加密 AAD、env 标记块前缀、`EASY_KEYS_DATA_DIR`。改这些等于清空老用户数据，禁止顺手「改名」。
+Tokey：完全本地的 AI API Key 管理工具。Tauri 2（Rust 后端）+ React 18 + Vite + TypeScript（前端）。应用自身**零联网**——无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击「测速」。
 
 ## 常用命令
 
@@ -42,7 +40,7 @@ npm run tauri dev              # 本地开发窗口
 ## 测试约定
 
 - 分层：前端纯逻辑单测（`src/*.test.ts`）、前端组件测试（`src/**/*.test.tsx`，mock `src/api.ts` 与 Tauri 插件，不碰真后端）、Rust 集成测试（`src-tauri/tests/`）、真机 E2E（`e2e/`）。
-- 隔离红线：Rust 测试必须经 `EASY_KEYS_DATA_DIR` 指向临时目录，**绝不触碰真实保险库**；文件系统类测试走全局 Mutex 串行。E2E 同样用独立临时数据目录。
+- 隔离红线：Rust 测试必须经 `TOKEY_DATA_DIR` 指向临时目录，**绝不触碰真实保险库**；文件系统类测试走全局 Mutex 串行。E2E 同样用独立临时数据目录。
 - 新增行为必须带测试；测试代码不进入发布包。
 
 ## 安全红线

@@ -25,7 +25,7 @@ fn sample(name: &str, key: &str) -> ApiKeyRecord {
 fn test_encrypted_export_import_roundtrip() {
     let records = vec![sample("A", "sk-secret-1"), sample("B", "sk-secret-2")];
     let out = export_import::encrypted_export(&records, "export-pass-123").unwrap();
-    assert!(out.contains("EASYKEYS-EKEY"));
+    assert!(out.contains("TOKEY-EKEY"));
     // 密文绝不能包含明文密钥
     assert!(!out.contains("sk-secret-1"));
     assert!(!out.contains("sk-secret-2"));
@@ -139,7 +139,7 @@ fn test_encrypted_roundtrip_empty_records() {
     // 空密钥列表导出/导入应正常往返
     let records: Vec<ApiKeyRecord> = vec![];
     let out = export_import::encrypted_export(&records, "export-pass-123").unwrap();
-    assert!(out.contains("EASYKEYS-EKEY"));
+    assert!(out.contains("TOKEY-EKEY"));
     let back = export_import::encrypted_import(&out, "export-pass-123").unwrap();
     assert!(back.is_empty());
 }

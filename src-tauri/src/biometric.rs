@@ -103,7 +103,7 @@ mod imp {
     use std::ptr::NonNull;
     use std::time::Duration;
 
-    const SERVICE: &str = "com.easykeys.app";
+    const SERVICE: &str = "com.tokey.app";
     const ACCOUNT: &str = "vault-master";
     /// 系统验证弹窗的说明文字（用户可见）
     const AUTH_REASON: &str = "解锁 Tokey 保险库";
@@ -275,7 +275,7 @@ mod imp {
     use windows::Security::Credentials::{PasswordCredential, PasswordVault};
     use windows::Win32::System::WinRT::{RoInitialize, RO_INIT_MULTITHREADED};
 
-    const RESOURCE: &str = "easy-keys";
+    const RESOURCE: &str = "tokey";
     const USER_NAME: &str = "vault-master";
 
     /// Tauri 命令运行在线程池上，线程未必初始化过 COM 单元；

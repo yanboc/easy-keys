@@ -4,8 +4,8 @@ use std::fs;
 use std::path::PathBuf;
 
 /// 写入 rc 文件的标记区块
-pub const BLOCK_START: &str = "# >>> easy-keys start <<<";
-pub const BLOCK_END: &str = "# >>> easy-keys end <<<";
+pub const BLOCK_START: &str = "# >>> tokey start <<<";
+pub const BLOCK_END: &str = "# >>> tokey end <<<";
 
 /// 探测 shell rc 文件：
 /// - 优先 $SHELL，其次常见路径
@@ -39,7 +39,7 @@ pub fn detect_shell_rc() -> AppResult<Option<PathBuf>> {
     Ok(Some(home.join(".zshrc")))
 }
 
-/// 从 rc 文件内容中替换 easy-keys 区块（幂等），返回新内容
+/// 从 rc 文件内容中替换 tokey 区块（幂等），返回新内容
 /// pub 供集成测试使用
 pub fn replace_block(content: &str, new_block: &str) -> String {
     let start_pos = content.find(BLOCK_START);
@@ -70,7 +70,7 @@ pub fn build_block(records: &[ApiKeyRecord], export_syntax: bool) -> String {
     let mut lines = String::new();
     lines.push_str(BLOCK_START);
     lines.push('\n');
-    lines.push_str("# 由 easy-keys 自动生成，请勿手动修改");
+    lines.push_str("# 由 tokey 自动生成，请勿手动修改");
     lines.push('\n');
     for r in records {
         let env_name = r.effective_env_name();
@@ -101,7 +101,7 @@ pub fn write_persistent_unix(records: &[ApiKeyRecord]) -> AppResult<EnvWriteResu
     let new_content = replace_block(&existing, &block);
 
     // 原子写入
-    let tmp = rc.with_extension("easykeys.tmp");
+    let tmp = rc.with_extension("tokey.tmp");
     fs::write(&tmp, &new_content)?;
     fs::rename(&tmp, &rc)?;
 

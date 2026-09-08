@@ -8,7 +8,7 @@
 
 </div>
 
-完全本地的 AI API Key 管理工具（macOS / Windows / Linux）。Tokey = token + key。原名 easy-keys，v0.4.2 起更名为 Tokey，既有数据自动沿用无需迁移。
+完全本地的 AI API Key 管理工具（macOS / Windows / Linux）。Tokey = token + key。
 
 加密保险库存储你的所有模型 API Key，支持一键测速、明文/加密导出、一键写入环境变量。应用自身**零联网**——没有遥测、没有更新检查、没有任何第三方连接，唯一可能联网的场景是你主动点击「测速」。
 
@@ -110,11 +110,11 @@ npm run test:e2e        # 真机 E2E（构建 debug+e2e 二进制后驱动真实
 - 方案：Rust 插件 `tauri-plugin-wdio-webdriver` 在应用内嵌入 WebDriver HTTP server（macOS 上 tauri-driver 无 WKWebView 支持，故用 embedded 方案），npm 侧用 `@wdio/tauri-service`（`driverProvider: 'embedded'`）+ WebdriverIO + Mocha。
 - **安全隔离**：该插件只在 cargo feature `e2e` 下编译（`src-tauri/Cargo.toml` 的 optional 依赖 + `src/lib.rs` 条件注册）；`npm run tauri build` 的 release 构建**不含** WebDriver server。
 - E2E 二进制必须同时带 `tauri/custom-protocol` feature（`test:e2e:build` 已内置）：裸 `cargo build --features e2e` 在 Tauri 2 里是 dev 模式，窗口会尝试加载 vite dev server（localhost:1420）而白屏；加 `custom-protocol` 才会内嵌 `dist/` 前端资源。
-- **数据隔离**：E2E 启动的应用经 `EASY_KEYS_DATA_DIR` 指向 `wdio.conf.ts` onPrepare 创建的临时目录，跑完自动删除，绝不触碰真实保险库。
+- **数据隔离**：E2E 启动的应用经 `TOKEY_DATA_DIR` 指向 `wdio.conf.ts` onPrepare 创建的临时目录，跑完自动删除，绝不触碰真实保险库。
 - `tauri.conf.json` 开启了 `withGlobalTauri`（E2E service 需要通过 `window.__TAURI__` 探测窗口）。
 
 测试隔离设计：
-- Rust 测试通过 `EASY_KEYS_DATA_DIR` 指向临时目录，**绝不触碰真实保险库**；文件系统类测试经全局 Mutex 串行执行避免竞态。
+- Rust 测试通过 `TOKEY_DATA_DIR` 指向临时目录，**绝不触碰真实保险库**；文件系统类测试经全局 Mutex 串行执行避免竞态。
 - 前端测试只测纯逻辑（无 Tauri/浏览器依赖），秒级完成。
 - 测试代码（`#[cfg(test)]` / `*.test.ts`）只存在于开发期，**不进入发布包**——发布体积不受影响（已验证主二进制 14MB、.dmg 4.5MB）。
 
@@ -142,13 +142,11 @@ npm run tauri build
 
 | 平台 | 路径 |
 | --- | --- |
-| macOS | `~/Library/Application Support/easy-keys/vault.json` |
-| Linux | `~/.local/share/easy-keys/vault.json` |
-| Windows | `%APPDATA%\easy-keys\vault.json` |
+| macOS | `~/Library/Application Support/tokey/vault.json` |
+| Linux | `~/.local/share/tokey/vault.json` |
+| Windows | `%APPDATA%\tokey\vault.json` |
 
 文件权限为仅当前用户可读写（0600）。加密导出 `.ekey` 文件可在任意平台导入。
-
-> 目录名保持 `easy-keys` 不改是有意为之：v0.4.2 更名后沿用原数据目录与 bundle identifier（`com.easykeys.app`），老用户的保险库与生物识别托管项无损保留。
 
 ---
 

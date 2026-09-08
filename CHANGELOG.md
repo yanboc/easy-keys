@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-09
+
+里程碑版本：内部标识全面更名 tokey（**不兼容旧版数据**，需重新创建保险库）。
+
+### Changed
+
+- **BREAKING**：全部内部标识更名——bundle identifier `com.tokey.app`、数据目录 `~/Library/Application Support/tokey/`（Linux `~/.local/share/tokey/`、Windows `%APPDATA%\tokey\`）、保险库加密 AAD `tokey-vault-v1`、Keychain service、环境变量标记块 `# >>> tokey start/end <<<`、`.ekey` 文件魔数 `TOKEY-EKEY`、测试注入环境变量 `TOKEY_DATA_DIR`；仓库与本地目录统一为 tokey
+- 旧版保险库不会被读取：升级后相当于全新安装，请提前用旧版「导出 → 加密 .ekey」备份再导入
+
 ## [0.4.5] - 2026-09-09
 
 ### Removed
@@ -65,12 +74,11 @@
 
 ### Compatibility
 
-- 数据目录（`easy-keys/`）、bundle identifier（`com.easykeys.app`）、保险库加密 AAD、环境变量标记块、Keychain 托管项全部保持不变，老用户升级后数据与生物识别解锁无损沿用
-- 旧安装包清理同时识别 `tokey_*.dmg` 与改名前的 `easy-keys_*.dmg`
+- 内部标识（数据目录、bundle identifier、加密 AAD、环境变量标记块、Keychain 托管项）保持不变，升级后数据与生物识别解锁无损沿用
 
 ### Notes
 
-- 仓库名保持 `yanboc/easy-keys` 不变，Release 产物文件名改为 `tokey_*`
+- Release 产物文件名改为 `tokey_*`
 
 ## [0.4.1] - 2026-09-07
 
@@ -90,7 +98,7 @@
 - 生物识别解锁：主密码可托管至系统安全存储（macOS Keychain 访问控制项 / Windows Credential Locker），解锁由系统强制 Touch ID / Windows Hello（指纹/面容/PIN）验证，失败可回退主密码；Linux 不显示入口
 - 密钥表单智能命名：按 Base URL 自动推导名称（如 deepseek/openai），Tab 一键填入，手动输入不被覆盖
 - 表单内「测速并获取模型」：一键请求 `/models`，显示延迟并勾选可用模型保存到记录（默认全不选）
-- 旧版本安装包自动清理：启动时将下载目录中低版本的 `easy-keys_*.dmg` 移入废纸篓（不触碰用户数据）
+- 旧版本安装包自动清理：启动时将下载目录中低版本的安装包 dmg 移入废纸篓（不触碰用户数据）
 
 ### Changed
 
@@ -137,7 +145,8 @@
 - 应用零联网：无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击测速
 - Tauri capabilities 最小权限：仅开放文件对话框、剪贴板读写与窗口尺寸调整
 
-[Unreleased]: https://github.com/yanboc/tokey/compare/v0.4.5...HEAD
+[Unreleased]: https://github.com/yanboc/tokey/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/yanboc/tokey/compare/v0.4.5...v0.5.0
 [0.4.5]: https://github.com/yanboc/tokey/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/yanboc/tokey/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/yanboc/tokey/compare/v0.4.2...v0.4.3

@@ -50,7 +50,7 @@ pub fn encrypt_vault(password: &str, records: &RecordsFile) -> AppResult<VaultFi
     let nonce = Nonce::from_slice(&nonce_bytes);
 
     let ciphertext = cipher
-        .encrypt(nonce, Payload { msg: &plaintext, aad: b"easy-keys-vault-v1" })
+        .encrypt(nonce, Payload { msg: &plaintext, aad: b"tokey-vault-v1" })
         .map_err(AppError::from)?;
 
     Ok(VaultFile {
@@ -89,7 +89,7 @@ pub fn decrypt_vault(password: &str, vault: &VaultFile) -> AppResult<RecordsFile
             nonce,
             Payload {
                 msg: &ciphertext,
-                aad: b"easy-keys-vault-v1",
+                aad: b"tokey-vault-v1",
             },
         )
         .map_err(|_| AppError::new("主密码错误或保险库已损坏"))?;

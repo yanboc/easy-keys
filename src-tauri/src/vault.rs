@@ -39,29 +39,29 @@ pub fn update_session_password(new_password: &str) {
 const VAULT_FILE_NAME: &str = "vault.json";
 
 /// 应用数据目录（跨平台）：
-/// macOS: ~/Library/Application Support/easy-keys
-/// Linux: ~/.local/share/easy-keys
-/// Windows: %APPDATA%\easy-keys
+/// macOS: ~/Library/Application Support/tokey
+/// Linux: ~/.local/share/tokey
+/// Windows: %APPDATA%\tokey
 pub fn app_data_dir() -> AppResult<PathBuf> {
     dirs::data_local_dir()
         .or_else(dirs::data_dir)
-        .map(|p| p.join("easy-keys"))
+        .map(|p| p.join("tokey"))
         .ok_or_else(|| AppError::new("无法确定应用数据目录"))
 }
 
 /// 供测试注入的数据目录。
-/// 通过 env var EASY_KEYS_DATA_DIR 覆盖（首次调用后锁定，保证测试进程内一致）。
-/// 数据目录解析：优先 EASY_KEYS_DATA_DIR（测试注入），否则真实用户目录。
+/// 通过 env var TOKEY_DATA_DIR 覆盖（首次调用后锁定，保证测试进程内一致）。
+/// 数据目录解析：优先 TOKEY_DATA_DIR（测试注入），否则真实用户目录。
 /// 每次实时读取，便于测试在 Mutex 保护下切换目录。
 fn data_dir() -> PathBuf {
-    std::env::var_os("EASY_KEYS_DATA_DIR")
+    std::env::var_os("TOKEY_DATA_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|| app_data_dir().unwrap_or_else(|_| PathBuf::from(".")))
 }
 
 /// 测试辅助：设置数据目录（仅测试进程调用）
 pub fn set_data_dir_for_tests(dir: PathBuf) {
-    std::env::set_var("EASY_KEYS_DATA_DIR", dir);
+    std::env::set_var("TOKEY_DATA_DIR", dir);
 }
 
 pub fn vault_path() -> AppResult<PathBuf> {
