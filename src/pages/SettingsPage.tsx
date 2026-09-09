@@ -23,13 +23,37 @@ export default function SettingsPage({
   const [bioPwd, setBioPwd] = useState("");
   const [bioEnabling, setBioEnabling] = useState(false);
   const [bioBusy, setBioBusy] = useState(false);
+  const [provInfo, setProvInfo] = useState<api.ProvidersInfo | null>(null);
+  const [provBusy, setProvBusy] = useState(false);
 
   useEffect(() => {
     api
       .biometricStatus()
       .then(setBio)
       .catch(() => {});
+    api
+      .providersInfo()
+      .then(setProvInfo)
+      .catch(() => {});
   }, []);
+
+  const updateProviders = async () => {
+    setProvBusy(true);
+    try {
+      const info = await api.updateProviders();
+      setProvInfo(info);
+      alert(
+        t("提供商信息已更新至 {version}（共 {n} 家）", {
+          version: info.version,
+          n: info.count,
+        })
+      );
+    } catch (e) {
+      alert(t("更新失败：{e}", { e: String(e) }));
+    } finally {
+      setProvBusy(false);
+    }
+  };
 
   const changePassword = async () => {
     // 生物识别会话下前端不持有主密码，跳过本地比对，由后端验证
@@ -230,6 +254,37 @@ export default function SettingsPage({
 
       <div className="card" style={{ maxWidth: 560, marginTop: 16 }}>
         <div className="field-label" style={{ fontSize: 14, marginBottom: 10 }}>
+          {t("提供商信息")}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.8 }}>
+            {provInfo
+              ? t("当前版本：{version}（{n} 家，{source}）", {
+                  version: provInfo.version,
+                  n: provInfo.count,
+                  source: provInfo.source === "cached" ? t("已更新") : t("内置"),
+                })
+              : "…"}
+            <div style={{ marginTop: 4, fontSize: 12, color: "var(--text-faint)" }}>
+              {t("仅下载提供商模板（名称、Base URL 等），不上传任何数据；主密码与密钥始终只存在本机。")}
+            </div>
+          </div>
+          <button className="btn" onClick={updateProviders} disabled={provBusy}>
+            {provBusy ? <span className="spinner" /> : null}
+            {t("检查更新")}
+          </button>
+        </div>
+      </div>
+
+      <div className="card" style={{ maxWidth: 560, marginTop: 16 }}>
+        <div className="field-label" style={{ fontSize: 14, marginBottom: 10 }}>
           {t("关于")}
         </div>
         <div
@@ -250,8 +305,8 @@ export default function SettingsPage({
             {t("· 密钥经 Argon2id + AES-256-GCM 加密存储在本机")}
           </div>
           <div>{t("· 支持 Touch ID / Windows Hello 生物识别解锁")}</div>
-          <div>{t("· 应用自身零联网：无遥测、无更新检查、无第三方请求")}</div>
-          <div>{t("· 仅当你主动点击「测速」时才直连你配置的 API 端点")}</div>
+          <div>{t("· 应用自身无遥测、无自动更新检查、无第三方请求")}</div>
+          <div>{t("· 仅测速与手动「检查更新」提供商信息时联网")}</div>
           <div style={{ marginTop: 4, color: "var(--text-faint)" }}>
             {t("请务必备份加密导出文件，主密码丢失后数据无法恢复。")}
           </div>

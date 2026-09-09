@@ -32,6 +32,7 @@ export function makeRecord(overrides: Partial<ApiKeyRecord> = {}): ApiKeyRecord 
     authType: "bearer",
     apiKey: "sk-test1234567890abcd",
     models: [],
+    billing: "metered",
     notes: "",
     envName: "",
     createdAt: 1,

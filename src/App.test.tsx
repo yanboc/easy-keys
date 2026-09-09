@@ -64,7 +64,7 @@ describe("App 锁屏 / 生物识别解锁", () => {
     // 进入主界面（侧栏导航出现），窗口恢复主尺寸
     expect((await screen.findAllByText("密钥管理")).length).toBeGreaterThan(0);
     await waitFor(() => {
-      expect(api.resizeWindow).toHaveBeenCalledWith(960, 590, 760, 520);
+      expect(api.resizeWindow).toHaveBeenCalledWith(800, 560, 784, 520);
     });
     // 记录已载入（密钥列表页显示名称）
     expect(await screen.findByText("我的 OpenAI")).toBeInTheDocument();

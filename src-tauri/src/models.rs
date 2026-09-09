@@ -18,6 +18,9 @@ pub struct ApiKeyRecord {
     /// 可选的模型列表（旧保险库 JSON 可能缺该字段，默认空）
     #[serde(default)]
     pub models: Vec<String>,
+    /// 计费类型：metered（按量计费）/ plan（Coding Plan 订阅），默认按量
+    #[serde(default = "default_billing")]
+    pub billing: String,
     /// 备注
     pub notes: String,
     /// 环境变量名（如 OPENAI_API_KEY），空则自动生成
@@ -37,6 +40,11 @@ impl ApiKeyRecord {
         let provider = provider.replace(['-', ' ', '.'], "_");
         format!("{}_API_KEY", provider)
     }
+}
+
+/// billing 字段默认值：按量计费（旧保险库 JSON 缺该字段时兜底）
+fn default_billing() -> String {
+    "metered".into()
 }
 
 /// 去掉环境变量名中的非法字符

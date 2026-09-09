@@ -8,6 +8,10 @@ vi.mock("../api", () => ({
   biometricStatus: vi.fn(),
   biometricEnable: vi.fn(),
   biometricDisable: vi.fn(),
+  providersInfo: vi.fn(() =>
+    Promise.resolve({ version: "2026-09-09", source: "builtin", count: 8 })
+  ),
+  updateProviders: vi.fn(),
 }));
 
 import * as api from "../api";

@@ -30,6 +30,22 @@ const DICT: Record<string, string> = {
   "导出 / 导入": "Export / Import",
   "环境变量": "Env Variables",
   "设置": "Settings",
+  "控制台": "Console",
+  "提供商 / 项目": "Provider / Project",
+  "按量付费": "Pay-as-you-go",
+  "购买 / 管理": "Buy / Manage",
+  "各家提供商的后台入口：左侧按量付费（充值/用量/密钥管理），右侧 Coding / Token Plan 订阅。":
+    "Provider consoles: pay-as-you-go (top-up/usage/keys) on the left, Coding / Token Plan subscriptions on the right.",
+
+  // ---- 密钥表单 ----
+  "计费类型": "Billing Type",
+  "按量计费": "Pay-as-you-go",
+  "按量": "Metered",
+  "Coding Plan 订阅": "Coding Plan subscription",
+  "适合配置 coding 工具（Claude Code、Codex 等）：订阅制，额度内随便跑 agent 循环":
+    "Best for coding agents (Claude Code, Codex, etc.): subscription-based, run agent loops freely within quota",
+  "按 token 计费，适合做实验、配普通应用；用它跑 coding agent 的长时间循环可能产生高额开销":
+    "Billed per token — good for experiments and regular apps; long coding-agent loops may incur high costs",
 
   // ---- 侧栏底部 ----
   "切换为深色模式": "Switch to dark mode",
@@ -116,6 +132,14 @@ const DICT: Record<string, string> = {
 
   // ---- 导出 / 导入 ----
   "操作失败：{msg}": "Operation failed: {msg}",
+  "Coding Plan · 一键导入 coding 工具": "Coding Plan · One-click agent setup",
+  "Claude Code / Codex / Kimi Code 直接写入本地配置文件（写前自动备份）；Cursor 需在界面内手动配置，提供复制指引。":
+    "Claude Code / Codex / Kimi Code write to local config files (auto-backup first); Cursor requires in-app setup — copy guide provided.",
+  "导入 {label}": "Import to {label}",
+  "配置 Cursor": "Set up Cursor",
+  "Cursor 只能在界面内配置：Settings → Models → 填入 OpenAI API Key 并 Override OpenAI Base URL。点击下方按钮复制对应值。":
+    "Cursor can only be configured in-app: Settings → Models → set OpenAI API Key and Override OpenAI Base URL. Use the buttons below to copy each value.",
+  "已复制（30 秒后自动清除剪贴板）": "Copied (clipboard auto-clears in 30s)",
   "没有可导出的密钥": "No keys to export",
   "导出口令至少需要 6 位": "Export passphrase must be at least 6 characters",
   "两次输入的导出口令不一致": "Export passphrases do not match",
@@ -191,6 +215,19 @@ const DICT: Record<string, string> = {
     "Security note: persistent writes append keys in plain text to your shell config (usually readable only by you). If at-rest security matters more, use \"Current session only\" or a .env file and delete it after use.",
 
   // ---- 设置 ----
+  "提供商信息": "Provider Info",
+  "检查更新": "Check for Updates",
+  "已更新": "updated",
+  "内置": "built-in",
+  "当前版本：{version}（{n} 家，{source}）": "Version: {version} ({n} providers, {source})",
+  "仅下载提供商模板（名称、Base URL 等），不上传任何数据；主密码与密钥始终只存在本机。":
+    "Only downloads provider templates (names, base URLs); nothing is uploaded. Your master password and keys never leave this machine.",
+  "提供商信息已更新至 {version}（共 {n} 家）": "Provider info updated to {version} ({n} providers)",
+  "更新失败：{e}": "Update failed: {e}",
+  "· 应用自身无遥测、无自动更新检查、无第三方请求":
+    "· No telemetry, no auto-update checks, no third-party requests",
+  "· 仅测速与手动「检查更新」提供商信息时联网":
+    "· Network access only when you run a speed test or manually update provider info",
   "修改主密码、生物识别解锁与查看应用信息。":
     "Change master password, biometric unlock, and view app info.",
   "修改主密码": "Change Master Password",

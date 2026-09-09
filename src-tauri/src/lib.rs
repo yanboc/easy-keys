@@ -1,9 +1,11 @@
+pub mod agents;
 pub mod biometric;
 pub mod crypto;
 pub mod env;
 pub mod error;
 pub mod export_import;
 pub mod models;
+pub mod providers;
 pub mod speedtest;
 pub mod vault;
 
@@ -73,7 +75,20 @@ fn vault_change_password_cmd(old_password: String, new_password: String) -> AppR
 
 #[tauri::command]
 fn get_default_providers_cmd() -> Vec<ProviderTemplate> {
-    default_providers()
+    // 优先用设置页「更新提供商信息」缓存的版本（新于内置时），否则用编译期内置列表
+    providers::effective_providers()
+}
+
+/// 提供商模板当前生效版本（builtin / cached），供设置页展示
+#[tauri::command]
+fn providers_info_cmd() -> providers::ProvidersInfo {
+    providers::info()
+}
+
+/// 联网更新提供商模板：仅下载仓库 providers.json，不上传任何数据
+#[tauri::command]
+async fn update_providers_cmd() -> AppResult<providers::ProvidersInfo> {
+    providers::update().await
 }
 
 // ============ 测速 ============
@@ -164,6 +179,15 @@ fn biometric_unlock_cmd() -> AppResult<Vec<ApiKeyRecord>> {
     let records = vault::unlock_vault(&pwd)?;
     vault::set_session_password(pwd);
     Ok(records.records)
+}
+
+// ============ Coding Agent 一键导入 ============
+
+/// 把 Coding Plan 密钥写入指定 agent 配置（claude-code / codex / kimi-code）。
+/// 写入目标为 Rust 侧硬编码白名单，前端不可控。
+#[tauri::command]
+fn agent_import_cmd(agent: String, record: ApiKeyRecord) -> AppResult<agents::AgentImportResult> {
+    agents::write_agent_config(&agent, &record, None)
 }
 
 // ============ 环境变量 ============
@@ -298,6 +322,8 @@ pub fn run() {
             biometric_disable_cmd,
             biometric_unlock_cmd,
             get_default_providers_cmd,
+            providers_info_cmd,
+            update_providers_cmd,
             speedtest_cmd,
             fetch_models_cmd,
             export_plain_json_cmd,
@@ -305,6 +331,7 @@ pub fn run() {
             import_plain_json_cmd,
             import_encrypted_cmd,
             import_save_cmd,
+            agent_import_cmd,
             env_write_persistent_cmd,
             env_detect_rc_cmd,
             env_session_script_cmd,

@@ -288,3 +288,13 @@ export function GlobeIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** 指南针 / 控制台（外部链接导航） */
+export function CompassIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5Z" />
+    </Svg>
+  );
+}

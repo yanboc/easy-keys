@@ -14,6 +14,7 @@ fn sample(name: &str, key: &str) -> ApiKeyRecord {
         auth_type: "bearer".into(),
         api_key: key.into(),
         models: vec![],
+        billing: "metered".into(),
         notes: "".into(),
         env_name: "".into(),
         created_at: 0,

@@ -67,6 +67,23 @@ export function getDefaultProviders(): Promise<ProviderTemplate[]> {
   return invoke<ProviderTemplate[]>("get_default_providers_cmd");
 }
 
+// ============ 提供商信息更新 ============
+
+export interface ProvidersInfo {
+  version: string;
+  source: string; // "builtin" | "cached"
+  count: number;
+}
+
+export function providersInfo(): Promise<ProvidersInfo> {
+  return invoke<ProvidersInfo>("providers_info_cmd");
+}
+
+/** 联网更新提供商模板（仅下载仓库 providers.json，不上传任何数据） */
+export function updateProviders(): Promise<ProvidersInfo> {
+  return invoke<ProvidersInfo>("update_providers_cmd");
+}
+
 // ============ 外部链接 ============
 
 /** 用系统默认浏览器打开 http(s) 链接 */
@@ -147,6 +164,21 @@ export function importSave(
 }
 
 // ============ 环境变量 ============
+
+export interface AgentImportResult {
+  agent: string;
+  filesWritten: string[];
+  instructions: string;
+}
+
+/** Coding Plan 密钥一键导入 coding agent 配置（claude-code / codex / kimi-code） */
+export function agentImport(
+  agent: string,
+  record: ApiKeyRecord
+): Promise<AgentImportResult> {
+  return invoke<AgentImportResult>("agent_import_cmd", { agent, record });
+}
+
 
 export function envWritePersistent(
   records: ApiKeyRecord[]

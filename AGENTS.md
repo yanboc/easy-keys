@@ -2,7 +2,7 @@
 
 ## 项目简介
 
-Tokey：完全本地的 AI API Key 管理工具。Tauri 2（Rust 后端）+ React 18 + Vite + TypeScript（前端）。应用自身**零联网**——无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击「测速」。
+Tokey：完全本地的 AI API Key 管理工具。Tauri 2（Rust 后端）+ React 18 + Vite + TypeScript（前端）。应用自身**无遥测、无自动更新、无第三方 SDK**——仅两条联网路径，均需用户主动点击：「测速」与设置页「检查更新」提供商信息。
 
 ## 常用命令
 
@@ -22,7 +22,7 @@ npm run tauri dev              # 本地开发窗口
 
 本项目本机使用 OpenSpec 管理规格，现有行为的权威描述在 `openspec/specs/`（**仅本机维护，不入库**，已被 .gitignore 排除）：
 
-- `vault-crypto` / `key-management` / `speedtest` / `export-import` / `env-vars` / `biometric-unlock` / `ui-style` / `docs-conventions`
+- `vault-crypto` / `key-management` / `speedtest` / `export-import` / `env-vars` / `biometric-unlock` / `provider-update` / `console-links` / `ui-style` / `docs-conventions`
 
 工作流约定：
 
@@ -45,14 +45,14 @@ npm run tauri dev              # 本地开发窗口
 
 ## 安全红线
 
-- 保持零联网：不得引入遥测/上报/自动更新；新增网络请求必须走 OpenSpec proposal 并在 README 安全模型中说明。
+- 保持最小联网：不得引入遥测/上报/自动更新；新增网络请求必须走 OpenSpec proposal 并在 README 安全模型中说明。现有仅两条联网路径：测速、设置页手动「检查更新」提供商信息。
 - WebDriver server（`tauri-plugin-wdio-webdriver`）只允许在 `e2e` cargo feature 下编译，**release 构建严禁包含**。
 - 密钥默认遮蔽；明文导出必须二次确认；剪贴板 30 秒自动清除。
 
 ## 代码结构
 
 - `src/`：React 前端（`api.ts` 是唯一的 Tauri invoke 封装层，前端不直接 import `@tauri-apps/api`）
-- `src-tauri/src/`：Rust 后端（crypto / vault / env / export_import / speedtest / biometric / models / error / lib）
+- `src-tauri/src/`：Rust 后端（crypto / vault / env / export_import / speedtest / agents / providers / biometric / models / error / lib）
 - `openspec/`：规格与变更提案
 - `scripts/run.sh`：一键自回归入口
 - `scripts/make-dmg.sh`：CI macOS dmg 打包（内嵌已验证的 DS_Store 布局 + ad-hoc 深签名；tauri 自带 dmg bundler 在无头 CI 上布局会丢失）

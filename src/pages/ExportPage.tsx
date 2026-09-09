@@ -3,10 +3,75 @@ import * as api from "../api";
 import type { ApiKeyRecord } from "../types";
 import { effectiveEnvName } from "../types";
 import { t, useLang } from "../i18n";
-import { FileIcon, LockIcon } from "../components/icons";
+import { CopyIcon, FileIcon, LockIcon } from "../components/icons";
 import EnvPage from "./EnvPage";
 
 type Tab = "export" | "import" | "env";
+
+/** 复制文本到剪贴板（30 秒后自动清除） */
+async function copyText(text: string) {
+  const { writeText } = await import("@tauri-apps/plugin-clipboard-manager");
+  await writeText(text);
+  setTimeout(async () => {
+    try {
+      const { readText } = await import("@tauri-apps/plugin-clipboard-manager");
+      if ((await readText()) === text) await writeText("");
+    } catch {
+      /* 剪贴板清理失败可忽略 */
+    }
+  }, 30_000);
+}
+
+/** Cursor 无法写配置文件，弹窗给复制指引 */
+function CursorGuideModal({
+  record,
+  onClose,
+}: {
+  record: ApiKeyRecord;
+  onClose: () => void;
+}) {
+  useLang();
+  const [copied, setCopied] = useState("");
+  const copy = async (label: string, text: string) => {
+    await copyText(text);
+    setCopied(label);
+    setTimeout(() => setCopied(""), 1500);
+  };
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-title">{t("配置 Cursor")}</div>
+        <div className="field-hint" style={{ marginBottom: 12 }}>
+          {t("Cursor 只能在界面内配置：Settings → Models → 填入 OpenAI API Key 并 Override OpenAI Base URL。点击下方按钮复制对应值。")}
+        </div>
+        <div className="kv-row">
+          <span className="kv-label">Base URL</span>
+          <span className="kv-value">{record.baseUrl}</span>
+          <button className="icon-btn" onClick={() => copy("url", record.baseUrl)}>
+            <CopyIcon size={14} />
+          </button>
+        </div>
+        <div className="kv-row">
+          <span className="kv-label">API Key</span>
+          <span className="kv-value">{record.apiKey.slice(0, 4)}••••{record.apiKey.slice(-4)}</span>
+          <button className="icon-btn" onClick={() => copy("key", record.apiKey)}>
+            <CopyIcon size={14} />
+          </button>
+        </div>
+        {copied && (
+          <div className="field-hint" style={{ color: "var(--accent)" }}>
+            {t("已复制（30 秒后自动清除剪贴板）")}
+          </div>
+        )}
+        <div className="modal-actions">
+          <button className="btn" onClick={onClose}>
+            {t("关闭")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ExportPage({
   records,
@@ -45,6 +110,23 @@ export default function ExportPage({
       window.alert(t("操作失败：{msg}", { msg }));
     } else {
       window.alert(msg);
+    }
+  };
+
+  // ---- Coding Plan 一键导入 coding agent ----
+  const planRecords = records.filter((r) => r.billing === "plan");
+  const [importing, setImporting] = useState<string | null>(null); // `${recordId}:${agent}`
+  const [cursorGuide, setCursorGuide] = useState<ApiKeyRecord | null>(null);
+
+  const importToAgent = async (record: ApiKeyRecord, agent: string) => {
+    setImporting(`${record.id}:${agent}`);
+    try {
+      const res = await api.agentImport(agent, record);
+      notify(res.instructions);
+    } catch (e) {
+      notify(String(e), "error");
+    } finally {
+      setImporting(null);
     }
   };
 
@@ -180,6 +262,67 @@ export default function ExportPage({
       </div>
 
       {tab === "env" && <EnvPage records={records} embedded />}
+
+      {/* Coding Plan 密钥：一键导入 coding agent */}
+      {planRecords.length > 0 && (
+        <div className="card" style={{ maxWidth: 560, marginTop: 16 }}>
+          <div className="field-label" style={{ marginBottom: 4 }}>
+            {t("Coding Plan · 一键导入 coding 工具")}
+          </div>
+          <div className="field-hint" style={{ marginBottom: 12 }}>
+            {t("Claude Code / Codex / Kimi Code 直接写入本地配置文件（写前自动备份）；Cursor 需在界面内手动配置，提供复制指引。")}
+          </div>
+          {planRecords.map((r) => (
+            <div
+              key={r.id}
+              style={{
+                borderTop: "1px solid var(--border)",
+                padding: "10px 0",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginBottom: 8,
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>{r.name}</span>
+                <span className="badge badge-plan">Plan</span>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {(
+                  [
+                    ["claude-code", "Claude Code"],
+                    ["codex", "Codex"],
+                    ["kimi-code", "Kimi Code"],
+                  ] as const
+                ).map(([agent, label]) => (
+                  <button
+                    key={agent}
+                    className="btn btn-sm"
+                    disabled={importing === `${r.id}:${agent}`}
+                    onClick={() => importToAgent(r, agent)}
+                  >
+                    {importing === `${r.id}:${agent}` ? (
+                      <span className="spinner" />
+                    ) : null}
+                    {t("导入 {label}", { label })}
+                  </button>
+                ))}
+                <button className="btn btn-sm" onClick={() => setCursorGuide(r)}>
+                  {t("配置 Cursor")}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {cursorGuide && (
+        <CursorGuideModal record={cursorGuide} onClose={() => setCursorGuide(null)} />
+      )}
 
       {tab === "export" && (
         <div className="card" style={{ maxWidth: 560 }}>

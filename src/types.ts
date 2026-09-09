@@ -8,6 +8,8 @@ export interface ApiKeyRecord {
   authType: string;
   apiKey: string;
   models: string[];
+  /** 计费类型：metered（按量计费）/ plan（Coding Plan 订阅） */
+  billing: string;
   notes: string;
   envName: string;
   createdAt: number;
@@ -61,6 +63,7 @@ export function newEmptyRecord(): ApiKeyRecord {
     authType: "bearer",
     apiKey: "",
     models: [],
+    billing: "metered",
     notes: "",
     envName: "",
     createdAt: now,

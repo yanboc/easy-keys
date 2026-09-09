@@ -37,6 +37,7 @@ fn sample_record(name: &str, key: &str) -> ApiKeyRecord {
         auth_type: "bearer".into(),
         api_key: key.into(),
         models: vec!["gpt-4o".into()],
+        billing: "metered".into(),
         notes: String::new(),
         env_name: String::new(),
         created_at: 0,

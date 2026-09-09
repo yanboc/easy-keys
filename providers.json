@@ -1,0 +1,77 @@
+{
+  "version": "2026-09-09",
+  "providers": [
+    {
+      "id": "openai",
+      "label": "OpenAI",
+      "defaultBaseUrl": "https://api.openai.com/v1",
+      "speedtestPath": "/models",
+      "authType": "bearer",
+      "defaultEnvName": "OPENAI_API_KEY",
+      "hint": "Authorization: Bearer"
+    },
+    {
+      "id": "anthropic",
+      "label": "Anthropic",
+      "defaultBaseUrl": "https://api.anthropic.com",
+      "speedtestPath": "/v1/models",
+      "authType": "x-api-key",
+      "defaultEnvName": "ANTHROPIC_API_KEY",
+      "hint": "x-api-key + anthropic-version"
+    },
+    {
+      "id": "gemini",
+      "label": "Google Gemini",
+      "defaultBaseUrl": "https://generativelanguage.googleapis.com",
+      "speedtestPath": "/v1beta/models",
+      "authType": "query",
+      "defaultEnvName": "GEMINI_API_KEY",
+      "hint": "?key=..."
+    },
+    {
+      "id": "deepseek",
+      "label": "DeepSeek",
+      "defaultBaseUrl": "https://api.deepseek.com",
+      "speedtestPath": "/models",
+      "authType": "bearer",
+      "defaultEnvName": "DEEPSEEK_API_KEY",
+      "hint": "OpenAI 兼容"
+    },
+    {
+      "id": "moonshot",
+      "label": "Moonshot (Kimi)",
+      "defaultBaseUrl": "https://api.moonshot.cn/v1",
+      "speedtestPath": "/models",
+      "authType": "bearer",
+      "defaultEnvName": "MOONSHOT_API_KEY",
+      "hint": "OpenAI 兼容"
+    },
+    {
+      "id": "groq",
+      "label": "Groq",
+      "defaultBaseUrl": "https://api.groq.com/openai/v1",
+      "speedtestPath": "/models",
+      "authType": "bearer",
+      "defaultEnvName": "GROQ_API_KEY",
+      "hint": "OpenAI 兼容"
+    },
+    {
+      "id": "ollama",
+      "label": "Ollama (本地)",
+      "defaultBaseUrl": "http://localhost:11434",
+      "speedtestPath": "/api/tags",
+      "authType": "none",
+      "defaultEnvName": "OLLAMA_API_KEY",
+      "hint": "本地模型，无需 Key"
+    },
+    {
+      "id": "custom",
+      "label": "自定义 (OpenAI 兼容)",
+      "defaultBaseUrl": "https://your-endpoint.example.com/v1",
+      "speedtestPath": "/models",
+      "authType": "bearer",
+      "defaultEnvName": "CUSTOM_API_KEY",
+      "hint": "任意 OpenAI 兼容端点"
+    }
+  ]
+}

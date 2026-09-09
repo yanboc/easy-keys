@@ -152,6 +152,31 @@ export default function KeyFormModal({
         </div>
 
         <div className="field">
+          <label className="field-label">{t("计费类型")}</label>
+          <div className="segmented">
+            <button
+              type="button"
+              className={form.billing !== "plan" ? "active" : ""}
+              onClick={() => set("billing", "metered")}
+            >
+              {t("按量计费")}
+            </button>
+            <button
+              type="button"
+              className={form.billing === "plan" ? "active" : ""}
+              onClick={() => set("billing", "plan")}
+            >
+              Coding Plan
+            </button>
+          </div>
+          <div className="field-hint">
+            {form.billing === "plan"
+              ? t("适合配置 coding 工具（Claude Code、Codex 等）：订阅制，额度内随便跑 agent 循环")
+              : t("按 token 计费，适合做实验、配普通应用；用它跑 coding agent 的长时间循环可能产生高额开销")}
+          </div>
+        </div>
+
+        <div className="field">
           <label className="field-label">{t("名称")}</label>
           <input
             className="input"

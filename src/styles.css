@@ -594,6 +594,39 @@ select {
   border-color: rgba(0, 122, 255, 0.25);
   color: var(--accent);
 }
+.badge-plan {
+  background: rgba(52, 199, 89, 0.12);
+  border-color: rgba(52, 199, 89, 0.3);
+  color: #28a745;
+}
+[data-theme="dark"] .badge-plan {
+  color: #30d158;
+}
+
+/* ---------- 分段选择器（计费类型） ---------- */
+.segmented {
+  display: inline-flex;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+.segmented button {
+  border: none;
+  background: transparent;
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.segmented button.active {
+  background: var(--bg-panel);
+  color: var(--text);
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
 .icon-btn {
   width: 28px;
   height: 28px;

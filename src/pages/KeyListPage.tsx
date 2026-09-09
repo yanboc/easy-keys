@@ -212,8 +212,20 @@ export default function KeyListPage({
               {records.map((r) => (
                 <tr key={r.id}>
                   <td>
-                    <div className="cell-name" title={r.name}>
-                      {r.name}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div className="cell-name" title={r.name}>
+                        {r.name}
+                      </div>
+                      <span
+                        className={`badge ${r.billing === "plan" ? "badge-plan" : ""}`}
+                        title={
+                          r.billing === "plan"
+                            ? t("Coding Plan 订阅")
+                            : t("按量计费")
+                        }
+                      >
+                        {r.billing === "plan" ? "Plan" : t("按量")}
+                      </span>
                     </div>
                     {r.notes && (
                       <div

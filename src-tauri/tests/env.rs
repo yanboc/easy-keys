@@ -14,6 +14,7 @@ fn rec(env_name: &str, key: &str) -> ApiKeyRecord {
         auth_type: "bearer".into(),
         api_key: key.into(),
         models: vec![],
+        billing: "metered".into(),
         notes: String::new(),
         env_name: env_name.into(),
         created_at: 0,

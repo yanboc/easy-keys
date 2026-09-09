@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-09
+
+### Added
+
+- 密钥计费分类：按量计费 / Coding Plan 两类管理，表单顶部分段选择（按量 key 跑 coding agent 有开销提示），列表名称旁显示 `按量` / `Plan` 徽标
+- Coding Plan 一键导入 coding 工具：Claude Code（写 shell 环境变量）、Codex CLI（写 `~/.codex/config.toml` + 环境变量）、Kimi Code（写 `~/.kimi-code/config.toml`）自动写入本地配置——标记段幂等替换、写前自动备份 `.tokey.bak`、原子写入；Cursor 提供复制指引弹窗
+- 「控制台」导航页：8 家主流提供商（OpenAI / Anthropic / Google / DeepSeek / Moonshot / 字节火山引擎 / 阿里百炼 / 智谱）的按量付费与 Coding Plan 购买/管理入口，三栏表直达
+- 设置页「提供商信息」：一键从仓库拉取最新提供商模板（名称 / Base URL 等），只下载不上传；缓存版本新于内置时生效
+
+### Changed
+
+- 主窗口收窄至 800×560（最小 784×520），刚好容纳统一限宽 560 的内容列
+- 「零联网」表述更新为「最小联网」：联网路径共两条（测速、手动检查更新提供商信息），均需主动点击
+
 ## [0.5.0] - 2026-09-09
 
 里程碑版本：内部标识全面更名 tokey（**不兼容旧版数据**，需重新创建保险库）。
@@ -145,7 +159,8 @@
 - 应用零联网：无遥测、无更新检查、无第三方 SDK，唯一联网路径是用户主动点击测速
 - Tauri capabilities 最小权限：仅开放文件对话框、剪贴板读写与窗口尺寸调整
 
-[Unreleased]: https://github.com/yanboc/tokey/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/yanboc/tokey/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/yanboc/tokey/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/yanboc/tokey/compare/v0.4.5...v0.5.0
 [0.4.5]: https://github.com/yanboc/tokey/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/yanboc/tokey/compare/v0.4.3...v0.4.4

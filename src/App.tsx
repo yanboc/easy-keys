@@ -5,6 +5,7 @@ import type { ApiKeyRecord, BiometricStatus } from "./types";
 import {
   BoltIcon,
   BoxIcon,
+  CompassIcon,
   FingerprintIcon,
   GearIcon,
   GitHubIcon,
@@ -19,9 +20,10 @@ import { useTheme, toggleTheme } from "./theme";
 import KeyListPage from "./pages/KeyListPage";
 import SpeedTestPage from "./pages/SpeedTestPage";
 import ExportPage from "./pages/ExportPage";
+import ConsolePage from "./pages/ConsolePage";
 import SettingsPage from "./pages/SettingsPage";
 
-type Page = "keys" | "speedtest" | "export" | "settings";
+type Page = "keys" | "speedtest" | "export" | "console" | "settings";
 
 type VaultState = "checking" | "need-create" | "locked" | "unlocked";
 
@@ -29,13 +31,14 @@ const GITHUB_URL = "https://github.com/yanboc/tokey";
 
 // 解锁页用小窗：刚好包裹一个输入控件；解锁后恢复主界面尺寸
 const LOCK_WIN = { w: 360, h: 250, minW: 320, minH: 220 };
-const MAIN_WIN = { w: 960, h: 590, minW: 760, minH: 520 };
+const MAIN_WIN = { w: 800, h: 560, minW: 784, minH: 520 };
 
 // label 为 i18n 字典 key（中文原文），渲染时经 t() 翻译
 const NAV_ITEMS: { id: Page; label: string; icon: ComponentType<IconProps> }[] = [
   { id: "keys", label: "密钥管理", icon: KeyIcon },
   { id: "speedtest", label: "连通性测速", icon: BoltIcon },
   { id: "export", label: "导出 / 导入", icon: BoxIcon },
+  { id: "console", label: "控制台", icon: CompassIcon },
   { id: "settings", label: "设置", icon: GearIcon },
 ];
 
@@ -368,6 +371,7 @@ export default function App() {
             onImported={() => refreshRecords()}
           />
         )}
+        {page === "console" && <ConsolePage />}
         {page === "settings" && (
           <SettingsPage
             password={password}
